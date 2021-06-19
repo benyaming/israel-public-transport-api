@@ -9,6 +9,8 @@ uvicorn = '*'
 httpx = '*'
 aiopg = '*'
 betterlogging = '*'
+apscheduler = '*'
+aioftp = '*'
 
 [dev-packages]
 
