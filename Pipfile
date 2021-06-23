@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 fastapi = '*'
+pydantic = '*'
 uvicorn = '*'
 httpx = '*'
 aiopg = '*'

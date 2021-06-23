@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 from bus_api.config import ROOT_PATH
 from bus_api.misс import scheduler
-from bus_api.gtfs_retriever import save_gtfs_data
+from bus_api.gtfs.gtfs_retriever import save_gtfs_data
 
 
 logging.basic_colorized_config(level=logging.INFO)
