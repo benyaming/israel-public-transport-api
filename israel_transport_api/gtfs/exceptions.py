@@ -1,0 +1,2 @@
+class GtfsFileNotFound(Exception):
+    pass

@@ -1,18 +1,18 @@
-import asyncio
+import csv
 import io
-import os
-import ftplib
 import zipfile
 import logging
-import tempfile
+import pathlib
+from typing import Dict, Tuple
 
 import aioftp
 
-from bus_api.config import GTFS_URL
-from bus_api.misс import scheduler, daily_trigger
+from israel_transport_api.config import GTFS_URL
+from israel_transport_api.gtfs.exceptions import GtfsFileNotFound
+from israel_transport_api.gtfs.models import Route
 
 logging.basicConfig(level=logging.DEBUG)
-GTFS_FP = '../gtfs_data'
+GTFS_FP = pathlib.Path(__file__).parent.parent.parent / 'gtfs_data'
 GTFS_FILES = [
     'agency.txt',
     'calendar.txt',
@@ -27,6 +27,7 @@ GTFS_FILES = [
 ]
 
 logger = logging.getLogger(__name__)
+ROUTES: Dict[Tuple[int, int], Route] = {}
 
 
 async def download_gtfs_data() -> io.BytesIO:
@@ -49,10 +50,31 @@ async def save_gtfs_data():
 
     logger.debug(f'Saving files to {GTFS_FP}...')
     with zipfile.ZipFile(gtfs_data_io) as zip_file:
-        if not os.path.exists(GTFS_FP):
-            os.mkdir(GTFS_FP)
+        if not GTFS_FP.exists():
+            GTFS_FP.mkdir()
+
         zip_file.extractall(GTFS_FP)
     logger.debug('Done.')
 
 
-scheduler.add_job(save_gtfs_data, trigger=daily_trigger)
+async def _store_db_data():
+    ...
+
+
+def _store_memory_data():
+    fp = GTFS_FP / 'routes.txt'
+    if not fp.exists():
+        raise GtfsFileNotFound('File routes.txt not found!')
+
+    with open(fp, 'r', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        ...
+
+
+async def load_gtfs_data():
+    if not (GTFS_FP / 'routes.txt').exists():
+        await save_gtfs_data()
+# scheduler.add_job(save_gtfs_data, trigger=daily_trigger)
+
+_store_memory_data()
+
