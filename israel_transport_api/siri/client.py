@@ -36,16 +36,3 @@ class SiriClient:
 
         parsed_data = parse_obj_as(List[MonitoredStopVisit], raw_stop_data[0]['MonitoredStopVisit'])
         return parsed_data
-
-
-
-
-import asyncio
-
-
-async def m():
-    c = SiriClient()
-    resp = await c._make_request('32372')
-    print(resp)
-
-asyncio.run(m())
