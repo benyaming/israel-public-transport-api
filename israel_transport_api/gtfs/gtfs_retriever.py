@@ -7,11 +7,12 @@ from typing import Dict, Tuple
 
 import aioftp
 
+from israel_transport_api import misс
 from israel_transport_api.config import GTFS_URL
 from israel_transport_api.gtfs.exceptions import GtfsFileNotFound
 from israel_transport_api.gtfs.models import Route
+from israel_transport_api.gtfs.utils import parse_route_long_name
 
-logging.basicConfig(level=logging.DEBUG)
 GTFS_FP = pathlib.Path(__file__).parent.parent.parent / 'gtfs_data'
 GTFS_FILES = [
     'agency.txt',
@@ -27,10 +28,9 @@ GTFS_FILES = [
 ]
 
 logger = logging.getLogger(__name__)
-ROUTES: Dict[Tuple[int, int], Route] = {}
 
 
-async def download_gtfs_data() -> io.BytesIO:
+async def _download_gtfs_data_from_ftp() -> io.BytesIO:
     logger.debug(f'Trying to establish ftp connection with {GTFS_URL}...')
 
     async with aioftp.Client.context(GTFS_URL, ) as ftp:
@@ -44,9 +44,9 @@ async def download_gtfs_data() -> io.BytesIO:
         return bio
 
 
-async def save_gtfs_data():
+async def _download_gtfs_data():
     logger.info('Starting to update gtfs files...')
-    gtfs_data_io = await download_gtfs_data()
+    gtfs_data_io = await _download_gtfs_data_from_ftp()
 
     logger.debug(f'Saving files to {GTFS_FP}...')
     with zipfile.ZipFile(gtfs_data_io) as zip_file:
@@ -58,23 +58,59 @@ async def save_gtfs_data():
 
 
 async def _store_db_data():
-    ...
+    logger.debug('Loading stops to database...')
+    fp = GTFS_FP / 'stops.txt'
+    if not fp.exists():
+        raise GtfsFileNotFound('File stops.txt not found!')
+
+    with open(fp, 'r', encoding='utf-8') as file:
+        reader = csv.reader(file)
+
+        is_headers_skipped = False
+        for row in reader:
+            if not is_headers_skipped:
+                is_headers_skipped = True
+                continue
+            # todo
 
 
-def _store_memory_data():
+def _load_memory_data():
+    logger.debug('Loading routes to memory storage...')
     fp = GTFS_FP / 'routes.txt'
     if not fp.exists():
         raise GtfsFileNotFound('File routes.txt not found!')
 
     with open(fp, 'r', encoding='utf-8') as file:
         reader = csv.reader(file)
-        ...
+
+        is_headers_skipped = False
+        for row in reader:
+            if not is_headers_skipped:
+                is_headers_skipped = True
+                continue
+
+            from_stop_name, from_city, to_stop_name, to_city = parse_route_long_name(row[3])
+            route = Route(
+                id=row[0],
+                agency_id=row[1],
+                short_name=row[2],
+                from_stop_name=from_stop_name,
+                to_stop_name=to_stop_name,
+                from_city=from_city,
+                to_city=to_city,
+                description=row[4],
+                type=row[5],
+                color=row[6]
+            )
+            misс.ROUTES_STORE[row[0]] = route
+    logger.debug('Done.')
 
 
-async def load_gtfs_data():
-    if not (GTFS_FP / 'routes.txt').exists():
-        await save_gtfs_data()
+async def init_gtfs_data(force_download: bool = False):
+    if not force_download and (not (GTFS_FP / 'routes.txt').exists() or not (GTFS_FP / 'stops.txt').exists()):
+        await _download_gtfs_data()
+
+    _load_memory_data()
+
+
 # scheduler.add_job(save_gtfs_data, trigger=daily_trigger)
-
-_store_memory_data()
-
