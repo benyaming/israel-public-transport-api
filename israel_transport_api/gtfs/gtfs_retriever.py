@@ -9,8 +9,8 @@ import aioftp
 from israel_transport_api import misc
 from israel_transport_api.config import GTFS_URL
 from israel_transport_api.gtfs.exceptions import GtfsFileNotFound
-from israel_transport_api.gtfs.models import Route, Stop, StopLocation
-from israel_transport_api.gtfs.gtfs_repository import save_stops
+from israel_transport_api.gtfs.models import Route
+from israel_transport_api.gtfs.gtfs_repository import save_stops, get_stops_count
 from israel_transport_api.gtfs.utils import parse_route_long_name, parse_stop_description
 
 GTFS_FP = pathlib.Path(__file__).parent.parent.parent / 'gtfs_data'
@@ -67,25 +67,27 @@ async def _store_db_data():
         reader = csv.reader(file)
         next(reader, None)  # skip headers
 
-        stops_to_save = [] = []
+        stops_to_save = []
         for row in reader:
             street, city, platform, floor = parse_stop_description(row[3])
-            stops_to_save.append(Stop(
-                stop_id=row[0],
-                code=row[1],
-                name=row[2],
-                street=street,
-                city=city,
-                platform=platform,
-                floor=floor,
-                location=StopLocation(
-                    coordinates=(float(row[4]), float(row[5]))
-                ),
-                location_type=row[6],
-                parent_station_id=row[7],
-                zone_id=row[8]
-            ))
+            stops_to_save.append({
+                '_id': int(row[0]),
+                'code': int(row[1]),
+                'name': row[2],
+                'street': street,
+                'city': city,
+                'platform': platform,
+                'floor': floor,
+                'location': {
+                    'type': 'Point',
+                    'coordinates': (float(row[4]), float(row[5]))
+                },
+                'location_type': row[6],
+                'parent_station_id': row[7],
+                'zone_id': row[8]
+            })
         await save_stops(stops_to_save)
+    logger.debug('Done.')
 
 
 def _load_memory_data():
@@ -101,7 +103,7 @@ def _load_memory_data():
         for row in reader:
             from_stop_name, from_city, to_stop_name, to_city = parse_route_long_name(row[3])
             route = Route(
-                id=row[0],
+                id=(row[0]),
                 agency_id=row[1],
                 short_name=row[2],
                 from_stop_name=from_stop_name,
@@ -122,5 +124,10 @@ async def init_gtfs_data(force_download: bool = False):
         await _download_gtfs_data()
 
     _load_memory_data()
-    await _store_db_data()
+
+    count = await get_stops_count()
+    logger.info(f'There are {count} documents in stops collection.')
+    if count == 0:
+        await _store_db_data()
+
     logger.info('Data initialization completed!')

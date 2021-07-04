@@ -1,4 +1,3 @@
-import asyncio
 import os
 
 import uvicorn
@@ -9,11 +8,12 @@ from odmantic import AIOEngine
 
 from israel_transport_api.config import ROOT_PATH, DB_URL, DB_NAME
 from israel_transport_api import misc
-from israel_transport_api.gtfs import init_gtfs_data, init_db
+from israel_transport_api.gtfs import init_gtfs_data, init_db, stops_router
 from israel_transport_api.misc import daily_trigger
 
 logging.basic_colorized_config(level=logging.DEBUG)
 app = FastAPI(root_path=ROOT_PATH, docs_url='/', redoc_url='/', title='Israel public transport API')
+app.include_router(stops_router)
 
 
 @app.on_event('startup')
@@ -27,16 +27,6 @@ async def on_startup():
 
     await init_db()
     await init_gtfs_data()
-
-
-@app.on_event('shutdown')
-async def on_shutdown():
-    ...
-
-
-@app.get('get_lines/{stop_number}')
-async def get_lines(stop_number: int) -> dict:
-    ...
 
 
 if __name__ == '__main__':
