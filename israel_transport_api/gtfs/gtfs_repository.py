@@ -1,28 +1,20 @@
-from israel_transport_api import misс
+from typing import List
+
+import pymongo
+from pymongo import IndexModel
+
+from israel_transport_api import misc
+from israel_transport_api.gtfs.models import Stop
 
 
-async def check_tables():
-    init_query = '''
-    CREATE TABLE IF NOT EXISTS stops
-    (
-      id           INT PRIMARY KEY,
-      code         INT UNIQUE,
-      name         TEXT NOT NULL,
-      street       TEXT NULL,
-      city         TEXT NOT NULL,
-      platform     TEXT NULL,
-      floor        TEXT NULL,
-      location     POINT NOT NULL,
-      zone_id      TEXT NULL
-    );
-    '''
-    async with misс.pool.acquire() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(init_query)
+async def init_db():
+    id_index = IndexModel('stop_id', unique=True)
+    geosphere_index = IndexModel([('location', pymongo.GEOSPHERE)])
+    await misc.db['stops'].create_indexes([id_index, geosphere_index])
 
 
-async def save_stops():
-    ...
+async def save_stops(stops: List[Stop]):
+    await misc.db_engine.save_all(stops)
 
 
 async def find_stop_by_id():

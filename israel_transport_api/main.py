@@ -1,30 +1,37 @@
+import asyncio
 import os
 
 import uvicorn
 import betterlogging as logging
 from fastapi import FastAPI
-from aiopg import create_pool
+from motor.motor_asyncio import AsyncIOMotorClient
+from odmantic import AIOEngine
 
-from israel_transport_api.config import ROOT_PATH, DB_DSN
-from israel_transport_api import misс
-from israel_transport_api.gtfs import init_gtfs_data
+from israel_transport_api.config import ROOT_PATH, DB_URL, DB_NAME
+from israel_transport_api import misc
+from israel_transport_api.gtfs import init_gtfs_data, init_db
+from israel_transport_api.misc import daily_trigger
 
-
-logging.basic_colorized_config(level=logging.INFO)
+logging.basic_colorized_config(level=logging.DEBUG)
 app = FastAPI(root_path=ROOT_PATH, docs_url='/', redoc_url='/', title='Israel public transport API')
 
 
 @app.on_event('startup')
 async def on_startup():
-    misс.scheduler.start()
-    misс.pool = create_pool(DB_DSN)
+    misc.scheduler.add_job(init_gtfs_data, args=(True,), trigger=daily_trigger)
+    misc.scheduler.start()
 
+    misc.motor_client = AsyncIOMotorClient(DB_URL)
+    misc.db_engine = AIOEngine(misc.motor_client, database=DB_NAME)
+    misc.db = misc.motor_client[DB_NAME]
+
+    await init_db()
     await init_gtfs_data()
 
 
 @app.on_event('shutdown')
 async def on_shutdown():
-    misс.pool.close()
+    ...
 
 
 @app.get('get_lines/{stop_number}')

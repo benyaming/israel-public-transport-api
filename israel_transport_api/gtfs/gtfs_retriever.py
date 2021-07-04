@@ -3,15 +3,15 @@ import io
 import zipfile
 import logging
 import pathlib
-from typing import Dict, Tuple
 
 import aioftp
 
-from israel_transport_api import misс
+from israel_transport_api import misc
 from israel_transport_api.config import GTFS_URL
 from israel_transport_api.gtfs.exceptions import GtfsFileNotFound
-from israel_transport_api.gtfs.models import Route
-from israel_transport_api.gtfs.utils import parse_route_long_name
+from israel_transport_api.gtfs.models import Route, Stop, StopLocation
+from israel_transport_api.gtfs.gtfs_repository import save_stops
+from israel_transport_api.gtfs.utils import parse_route_long_name, parse_stop_description
 
 GTFS_FP = pathlib.Path(__file__).parent.parent.parent / 'gtfs_data'
 GTFS_FILES = [
@@ -65,13 +65,27 @@ async def _store_db_data():
 
     with open(fp, 'r', encoding='utf-8') as file:
         reader = csv.reader(file)
+        next(reader, None)  # skip headers
 
-        is_headers_skipped = False
+        stops_to_save = [] = []
         for row in reader:
-            if not is_headers_skipped:
-                is_headers_skipped = True
-                continue
-            # todo
+            street, city, platform, floor = parse_stop_description(row[3])
+            stops_to_save.append(Stop(
+                stop_id=row[0],
+                code=row[1],
+                name=row[2],
+                street=street,
+                city=city,
+                platform=platform,
+                floor=floor,
+                location=StopLocation(
+                    coordinates=(float(row[4]), float(row[5]))
+                ),
+                location_type=row[6],
+                parent_station_id=row[7],
+                zone_id=row[8]
+            ))
+        await save_stops(stops_to_save)
 
 
 def _load_memory_data():
@@ -82,13 +96,9 @@ def _load_memory_data():
 
     with open(fp, 'r', encoding='utf-8') as file:
         reader = csv.reader(file)
+        next(reader, None)  # skip headers
 
-        is_headers_skipped = False
         for row in reader:
-            if not is_headers_skipped:
-                is_headers_skipped = True
-                continue
-
             from_stop_name, from_city, to_stop_name, to_city = parse_route_long_name(row[3])
             route = Route(
                 id=row[0],
@@ -102,15 +112,15 @@ def _load_memory_data():
                 type=row[5],
                 color=row[6]
             )
-            misс.ROUTES_STORE[row[0]] = route
+            misc.ROUTES_STORE[row[0]] = route
     logger.debug('Done.')
 
 
 async def init_gtfs_data(force_download: bool = False):
+    logger.info(f'Data initialization started {"with" if force_download else "without"} downloading files...')
     if not force_download and (not (GTFS_FP / 'routes.txt').exists() or not (GTFS_FP / 'stops.txt').exists()):
         await _download_gtfs_data()
 
     _load_memory_data()
-
-
-# scheduler.add_job(save_gtfs_data, trigger=daily_trigger)
+    await _store_db_data()
+    logger.info('Data initialization completed!')
