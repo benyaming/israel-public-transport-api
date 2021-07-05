@@ -9,9 +9,8 @@ from israel_transport_api.gtfs.models import Stop, Route
 
 
 async def init_db():
-    id_index = IndexModel('stop_id', unique=True)
     geosphere_index = IndexModel([('location', pymongo.GEOSPHERE)])
-    await misc.db['stops'].create_indexes([id_index, geosphere_index])
+    await misc.db['stops'].create_indexes([geosphere_index])
 
 
 async def save_stops(stops: List[dict]):

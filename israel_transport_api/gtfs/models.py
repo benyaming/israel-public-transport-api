@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Optional, Tuple
 from dataclasses import dataclass
 
-from odmantic import Model, EmbeddedModel
+from odmantic import Field, Model, EmbeddedModel
 
 
 @dataclass
@@ -20,8 +20,8 @@ class Route:
 
 
 class Stop(Model, ABC):
-    stop_id: str
-    code: str
+    id: int = Field(..., primary_field=True)
+    code: int
     name: str
     city: str
     street: Optional[str] = None
