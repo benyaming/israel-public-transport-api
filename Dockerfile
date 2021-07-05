@@ -5,6 +5,7 @@ WORKDIR /home/app
 COPY . .
 WORKDIR /home/app/israel_transport_api
 RUN pipenv install
+ENV TZ=Asia/Jerusalem
 ENV PYTHONPATH=/home/app
 ENV DOCKER_MODE=true
 EXPOSE 8000
