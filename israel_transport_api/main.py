@@ -12,7 +12,7 @@ from israel_transport_api.gtfs import init_gtfs_data, init_db, stops_router
 from israel_transport_api.misc import daily_trigger
 
 logging.basic_colorized_config(level=logging.DEBUG)
-app = FastAPI(root_path=ROOT_PATH, docs_url='/', redoc_url='/', title='Israel public transport API')
+app = FastAPI(root_path=f'/{ROOT_PATH}', docs_url='/', redoc_url='/', title='Israel public transport API')
 app.include_router(stops_router)
 
 
