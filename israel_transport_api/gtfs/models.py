@@ -19,6 +19,11 @@ class Route:
     color: str
 
 
+class StopLocation(EmbeddedModel, ABC):
+    type: str = 'Point'
+    coordinates: Tuple[float, float]
+
+
 class Stop(Model, ABC):
     id: int = Field(..., primary_field=True)
     code: int
@@ -27,7 +32,7 @@ class Stop(Model, ABC):
     street: Optional[str] = None
     floor: Optional[str] = None
     platform: Optional[str] = None
-    location: 'StopLocation'
+    location: StopLocation
     location_type: str
     parent_station_id: Optional[str] = None
     zone_id: Optional[str] = None
@@ -35,10 +40,21 @@ class Stop(Model, ABC):
     class Config:
         collection = 'stops'
 
-
-class StopLocation(EmbeddedModel, ABC):
-    type: str = 'Point'
-    coordinates: Tuple[float, float]
-
-
-Stop.update_forward_refs()
+        schema_extra = {
+            'example': {
+                'id': 10846,
+                'code': 5200,
+                'name': 'בנייני האומה',
+                'city': 'ירושלים',
+                'street': 'שדרות שז''ר',
+                'floor': None,
+                'platform': None,
+                'location': {
+                    'type': 'Point',
+                    'coordinates': [31.787909, 35.203428]
+                },
+                'location_type': '0',
+                'parent_station_id': '',
+                'zone_id': '3000'
+            }
+        }

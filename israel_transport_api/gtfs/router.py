@@ -8,12 +8,12 @@ from . import gtfs_repository
 stops_router = APIRouter(prefix='/stop', tags=['Stop'])
 
 
-@stops_router.get('/by_code/{stop_code}')
+@stops_router.get('/by_code/{stop_code}', response_model=Stop)
 async def find_stop_by_code(stop_code: int = Path(..., description='Stop code', example=5200)) -> Stop:
     return await gtfs_repository.find_stop_by_code(stop_code)
 
 
-@stops_router.get('/near')
+@stops_router.get('/near', response_model=List[Stop])
 async def find_nearest_stops(
         lat: float = Query(..., description='Latitude', ge=-90, le=90),
         lng: float = Query(..., description='Longitude', ge=-180, le=180),
