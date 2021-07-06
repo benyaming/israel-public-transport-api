@@ -10,7 +10,7 @@ from israel_transport_api import misc
 from israel_transport_api.config import GTFS_URL
 from israel_transport_api.gtfs.exceptions import GtfsFileNotFound
 from israel_transport_api.gtfs.models import Route
-from israel_transport_api.gtfs.gtfs_repository import save_stops, get_stops_count
+from israel_transport_api.gtfs.repository import stops_repository, routes_repository
 from israel_transport_api.gtfs.utils import parse_route_long_name, parse_stop_description
 
 GTFS_FP = pathlib.Path(__file__).parent.parent.parent / 'gtfs_data'
@@ -86,7 +86,7 @@ async def _store_db_data():
                 'parent_station_id': row[7],
                 'zone_id': row[8]
             })
-        await save_stops(stops_to_save)
+        await stops_repository.save_stops(stops_to_save)
     logger.debug('Done.')
 
 
@@ -114,18 +114,18 @@ def _load_memory_data():
                 type=row[5],
                 color=row[6]
             )
-            misc.ROUTES_STORE[row[0]] = route
+            routes_repository.save_route(route)
     logger.debug('Done.')
 
 
 async def init_gtfs_data(force_download: bool = False):
     logger.info(f'Data initialization started {"with" if force_download else "without"} downloading files...')
-    if not force_download and (not (GTFS_FP / 'routes.txt').exists() or not (GTFS_FP / 'stops.txt').exists()):
+    if force_download or (not (GTFS_FP / 'routes.txt').exists() or not (GTFS_FP / 'stops.txt').exists()):
         await _download_gtfs_data()
 
     _load_memory_data()
 
-    count = await get_stops_count()
+    count = await stops_repository.get_stops_count()
     logger.info(f'There are {count} documents in stops collection.')
     if count == 0:
         await _store_db_data()
