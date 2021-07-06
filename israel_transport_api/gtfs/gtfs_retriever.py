@@ -1,12 +1,11 @@
 import csv
 import io
-import zipfile
 import logging
 import pathlib
+import zipfile
 
 import aioftp
 
-from israel_transport_api import misc
 from israel_transport_api.config import GTFS_URL
 from israel_transport_api.gtfs.exceptions import GtfsFileNotFound
 from israel_transport_api.gtfs.models import Route

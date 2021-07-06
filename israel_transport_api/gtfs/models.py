@@ -1,12 +1,11 @@
 from abc import ABC
 from typing import Optional, Tuple
-from dataclasses import dataclass
 
 from odmantic import Field, Model, EmbeddedModel
+from pydantic import BaseModel
 
 
-@dataclass
-class Route:
+class Route(BaseModel):
     id: str
     agency_id: str
     short_name: str

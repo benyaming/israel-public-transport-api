@@ -5,7 +5,7 @@ from pymongo import IndexModel
 
 from israel_transport_api import misc
 from israel_transport_api.gtfs.exceptions import StopNotFound
-from israel_transport_api.gtfs.models import Stop, Route
+from israel_transport_api.gtfs.models import Stop
 
 
 async def init_db():

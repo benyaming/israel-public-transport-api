@@ -1,16 +1,17 @@
 import os
 
-import uvicorn
 import betterlogging as logging
+import uvicorn
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 from odmantic import AIOEngine
 
-from israel_transport_api.config import ROOT_PATH, DB_URL, DB_NAME
 from israel_transport_api import misc
+from israel_transport_api.__version__ import version
+from israel_transport_api.config import ROOT_PATH, DB_URL, DB_NAME
 from israel_transport_api.gtfs import init_gtfs_data, init_db, stops_router, routes_router
 from israel_transport_api.misc import daily_trigger
-from israel_transport_api.__version__ import version
+from israel_transport_api.siri import siri_router
 
 logging.basic_colorized_config(level=logging.DEBUG)
 app = FastAPI(
@@ -23,6 +24,7 @@ app = FastAPI(
 
 app.include_router(stops_router)
 app.include_router(routes_router)
+app.include_router(siri_router)
 
 
 @app.on_event('startup')
