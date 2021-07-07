@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 async def _download_gtfs_data_from_ftp() -> io.BytesIO:
     logger.debug(f'Trying to establish ftp connection with {GTFS_URL}...')
 
-    async with aioftp.Client.context(GTFS_URL, ) as ftp:
+    async with aioftp.Client.context(GTFS_URL) as ftp:
         bio = io.BytesIO()
 
         logger.debug('Downloading zip file...')

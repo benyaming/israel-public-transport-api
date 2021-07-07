@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from pydantic import BaseModel
 
 
 class GtfsFileNotFound(Exception):
@@ -7,11 +8,11 @@ class GtfsFileNotFound(Exception):
 
 class StopNotFound(Exception):
     def __init__(self, stop_code):
-        msg = f'Stop with code [{stop_code}] not found!'
-        raise HTTPException(404, msg)
+        raise HTTPException(422, {'message': f'Stop with code [{stop_code}] not found!', 'code': 1})
 
 
 class RouteNotFound(Exception):
     def __init__(self, stop_code):
-        msg = f'Route with id [{stop_code}] not found!'
-        raise HTTPException(404, msg)
+        raise HTTPException(422, {'message': f'Route with id [{stop_code}] not found!', 'code': 2})
+
+
