@@ -13,7 +13,6 @@ from israel_transport_api.gtfs import init_gtfs_data, init_db, stops_router, rou
 from israel_transport_api.misc import daily_trigger
 from israel_transport_api.siri import siri_router
 
-logging.basic_colorized_config(level=logging.DEBUG)
 app = FastAPI(
     root_path=f'/{ROOT_PATH}',
     docs_url='/',
