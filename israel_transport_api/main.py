@@ -1,3 +1,4 @@
+import asyncio
 import os
 
 import betterlogging as logging
@@ -36,7 +37,7 @@ async def on_startup():
     misc.db = misc.motor_client[DB_NAME]
 
     await init_db()
-    await init_gtfs_data()
+    asyncio.create_task(init_gtfs_data())
 
 
 if __name__ == '__main__':

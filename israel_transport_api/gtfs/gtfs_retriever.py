@@ -1,10 +1,10 @@
 import csv
+import ftplib
 import io
 import logging
 import pathlib
 import zipfile
 
-import aioftp
 
 from israel_transport_api.config import GTFS_URL
 from israel_transport_api.gtfs.exceptions import GtfsFileNotFound
@@ -32,15 +32,15 @@ logger = logging.getLogger(__name__)
 async def _download_gtfs_data_from_ftp() -> io.BytesIO:
     logger.debug(f'Trying to establish ftp connection with {GTFS_URL}...')
 
-    async with aioftp.Client.context(GTFS_URL) as ftp:
-        bio = io.BytesIO()
+    ftp = ftplib.FTP(GTFS_URL)
+    ftp.login()
 
-        logger.debug('Downloading zip file...')
-        async with ftp.get_stream('RETR israel-public-transportation.zip') as stream:
-            bio.write(await stream.read())
+    bio = io.BytesIO()
 
-        logger.debug('Done.')
-        return bio
+    logger.debug('Downloading zip file...')
+    ftp.retrbinary('RETR israel-public-transportation.zip', bio.write)
+    logger.debug('Done.')
+    return bio
 
 
 async def _download_gtfs_data():
