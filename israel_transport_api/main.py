@@ -14,7 +14,6 @@ from israel_transport_api.gtfs import init_gtfs_data, init_db, stops_router, rou
 from israel_transport_api.misc import daily_trigger
 from israel_transport_api.siri import siri_router
 
-logging.basic_colorized_config(level=logging.DEBUG)
 app = FastAPI(
     root_path=f'/{ROOT_PATH}',
     docs_url='/',
@@ -43,6 +42,10 @@ async def on_startup():
 
 if __name__ == '__main__':
     uvicorn.run(
-        app, host='0.0.0.0' if os.getenv('DOCKER_MODE') else '127.0.0.1', port=8000, use_colors=True,
-        log_level=logging.DEBUG, log_config='../uvicorn_logger.json'
+        app,
+        host='0.0.0.0' if os.getenv('DOCKER_MODE') else '127.0.0.1',
+        port=8000,
+        use_colors=True,
+        log_level=logging.DEBUG,
+        log_config='../uvicorn_logger.json'
     )
