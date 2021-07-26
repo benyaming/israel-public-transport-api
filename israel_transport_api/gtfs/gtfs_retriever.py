@@ -125,6 +125,7 @@ async def init_gtfs_data(force_download: bool = False):
             try:
                 logger.debug(f'Trying to download data, {i} tries remain...')
                 await _download_gtfs_data()
+                await _store_db_data()
             except Exception as e:
                 logger.exception(e)
                 await asyncio.sleep(10)
