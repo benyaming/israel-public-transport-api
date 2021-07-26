@@ -129,7 +129,7 @@ async def init_gtfs_data(force_download: bool = False):
             except Exception as e:
                 logger.exception(e)
                 await asyncio.sleep(10)
-            finally:
+            else:
                 break
 
     _load_memory_data()
