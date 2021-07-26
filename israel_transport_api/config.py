@@ -9,3 +9,6 @@ ROOT_PATH = os.getenv('ROOT_PATH', '')
 
 DB_URL = os.getenv('DB_URL')
 DB_NAME = os.getenv('DB_NAME')
+
+SCHED_HOURS = os.getenv('SCHED_HOURS')
+SCHED_MINS = os.getenv('SCHED_MINS')

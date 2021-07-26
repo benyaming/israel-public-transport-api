@@ -12,6 +12,7 @@ odmantic = "*"
 motor = "*"
 betterlogging = '*'
 apscheduler = '*'
+aioftp = '*'
 
 [dev-packages]
 

@@ -5,9 +5,11 @@ from httpx import AsyncClient
 from motor.core import AgnosticDatabase, AgnosticClient
 from odmantic import AIOEngine
 
+from israel_transport_api.config import SCHED_HOURS, SCHED_MINS
+
 
 scheduler = AsyncIOScheduler()
-daily_trigger = CronTrigger(hour=3, minute=0, timezone=pytz.timezone('Asia/Jerusalem'))
+daily_trigger = CronTrigger(hour=SCHED_HOURS, minute=SCHED_MINS, timezone=pytz.timezone('Asia/Jerusalem'))
 
 motor_client: AgnosticClient
 db_engine: AIOEngine

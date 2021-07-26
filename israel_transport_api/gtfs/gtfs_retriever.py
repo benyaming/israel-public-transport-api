@@ -1,10 +1,11 @@
+import asyncio
 import csv
-import ftplib
 import io
 import logging
 import pathlib
 import zipfile
 
+import aioftp
 
 from israel_transport_api.config import GTFS_URL
 from israel_transport_api.gtfs.exceptions import GtfsFileNotFound
@@ -32,15 +33,15 @@ logger = logging.getLogger(__name__)
 async def _download_gtfs_data_from_ftp() -> io.BytesIO:
     logger.debug(f'Trying to establish ftp connection with {GTFS_URL}...')
 
-    ftp = ftplib.FTP(GTFS_URL)
-    ftp.login()
+    async with aioftp.Client.context(GTFS_URL, ) as ftp:
+        bio = io.BytesIO()
 
-    bio = io.BytesIO()
+        logger.debug('Downloading zip file...')
+        async with ftp.get_stream('RETR israel-public-transportation.zip') as stream:
+            bio.write(await stream.read())
 
-    logger.debug('Downloading zip file...')
-    ftp.retrbinary('RETR israel-public-transportation.zip', bio.write)
-    logger.debug('Done.')
-    return bio
+        logger.debug('Done.')
+        return bio
 
 
 async def _download_gtfs_data():
@@ -120,7 +121,16 @@ def _load_memory_data():
 async def init_gtfs_data(force_download: bool = False):
     logger.info(f'Data initialization started {"with" if force_download else "without"} downloading files...')
     if force_download or (not (GTFS_FP / 'routes.txt').exists() or not (GTFS_FP / 'stops.txt').exists()):
-        await _download_gtfs_data()
+        n_retries = 5
+        for i in range(n_retries, 0, -1):
+            try:
+                logger.debug(f'Trying to download data, {i} tries remain...')
+                await _download_gtfs_data()
+            except Exception as e:
+                logger.exception(e)
+                await asyncio.sleep(10)
+            finally:
+                break
 
     _load_memory_data()
 
