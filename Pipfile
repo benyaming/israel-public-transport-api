@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-fastapi = '*'
+fastapi = '==0.67.0'  # untill https://github.com/tiangolo/fastapi/issues/3665 will closed
 pydantic = {extras = ["dotenv"],version = '*'}
 uvicorn = '*'
 httpx = '*'

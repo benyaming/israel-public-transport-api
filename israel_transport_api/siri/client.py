@@ -3,6 +3,7 @@ from datetime import datetime as dt
 from typing import List
 
 from pydantic import parse_obj_as
+from httpx import ReadTimeout
 
 from israel_transport_api.config import env
 from israel_transport_api.gtfs.repository import routes_repository, stops_repository
@@ -11,17 +12,26 @@ from israel_transport_api.siri.exceptions import SiriException
 from israel_transport_api.siri.models import IncomingRoute, IncomingRoutesResponse
 from israel_transport_api.siri.siri_models import MonitoredStopVisit
 
-logging.basicConfig(level=logging.DEBUG)
+
+RETRY_COUNT = 5
+logger = logging.getLogger('siri_client')
 
 
-async def _make_request(stop_code: int, monitoring_interval: int) -> List[MonitoredStopVisit]:
+async def _make_request(stop_code: int, monitoring_interval: int, retry_count: int = 0) -> List[MonitoredStopVisit]:
     params = {
         'Key': env.API_KEY,
         'MonitoringRef': stop_code,
         'PreviewInterval': f'PT{monitoring_interval}M'
     }
 
-    resp = await http_client.get(env.SIRI_URL, params=params)
+    try:
+        resp = await http_client.get(env.SIRI_URL, params=params)
+    except ReadTimeout:
+        logger.error('Read timeout!')
+        if retry_count < RETRY_COUNT:
+            raise
+        return await _make_request(stop_code, monitoring_interval, retry_count + 1)
+
     raw_data: dict = resp.json()
     raw_stop_data: List[dict] = raw_data.get('Siri', {}).get('ServiceDelivery', {}).get('StopMonitoringDelivery', [])
 
