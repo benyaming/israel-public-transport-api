@@ -4,7 +4,7 @@ from typing import List
 
 from pydantic import parse_obj_as
 
-from israel_transport_api.config import SIRI_URL, API_KEY
+from israel_transport_api.config import env
 from israel_transport_api.gtfs.repository import routes_repository, stops_repository
 from israel_transport_api.misc import http_client
 from israel_transport_api.siri.exceptions import SiriException
@@ -16,12 +16,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 async def _make_request(stop_code: int, monitoring_interval: int) -> List[MonitoredStopVisit]:
     params = {
-        'Key': API_KEY,
+        'Key': env.API_KEY,
         'MonitoringRef': stop_code,
         'PreviewInterval': f'PT{monitoring_interval}M'
     }
 
-    resp = await http_client.get(SIRI_URL, params=params)
+    resp = await http_client.get(env.SIRI_URL, params=params)
     raw_data: dict = resp.json()
     raw_stop_data: List[dict] = raw_data.get('Siri', {}).get('ServiceDelivery', {}).get('StopMonitoringDelivery', [])
 

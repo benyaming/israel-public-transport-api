@@ -1,14 +1,20 @@
-import os
+from pydantic import BaseSettings, Field
 
 
-SIRI_URL = os.getenv('SIRI_URL')
-GTFS_URL = os.getenv("GTFS_FTP_URL")
-API_KEY = os.getenv('API_KEY')
+class Env(BaseSettings):
 
-ROOT_PATH = os.getenv('ROOT_PATH', '')
+    class Config:
+        env_file = '../.env'
+        env_file_encoding = 'utf-8'
 
-DB_URL = os.getenv('DB_URL')
-DB_NAME = os.getenv('DB_NAME')
+    SIRI_URL: str = Field(..., env='SIRI_URL')
+    GTFS_URL: str = Field(..., env='GTFS_FTP_URL')
+    API_KEY: str = Field(..., env='API_KEY')
+    ROOT_PATH: str = Field('', env='ROOT_PATH')
+    DB_URL: str = Field('localhost', env='DB_URL')
+    DB_NAME: str = Field(..., env='DB_NAME')
+    SCHED_HOURS: int = Field(..., env='SCHED_HOURS')
+    SCHED_MINS: int = Field(..., env='SCHED_MINS')
 
-SCHED_HOURS = os.getenv('SCHED_HOURS')
-SCHED_MINS = os.getenv('SCHED_MINS')
+
+env = Env()

@@ -9,13 +9,13 @@ from odmantic import AIOEngine
 
 from israel_transport_api import misc
 from israel_transport_api.__version__ import version
-from israel_transport_api.config import ROOT_PATH, DB_URL, DB_NAME
+from israel_transport_api.config import env
 from israel_transport_api.gtfs import init_gtfs_data, init_db, stops_router, routes_router
 from israel_transport_api.misc import daily_trigger
 from israel_transport_api.siri import siri_router
 
 app = FastAPI(
-    root_path=f'/{ROOT_PATH}',
+    root_path=f'/{env.ROOT_PATH}',
     docs_url='/',
     redoc_url='/re_doc',
     title='Israel public transport API',
@@ -32,9 +32,9 @@ async def on_startup():
     misc.scheduler.add_job(init_gtfs_data, args=(True,), trigger=daily_trigger)
     misc.scheduler.start()
 
-    misc.motor_client = AsyncIOMotorClient(DB_URL)
-    misc.db_engine = AIOEngine(misc.motor_client, database=DB_NAME)
-    misc.db = misc.motor_client[DB_NAME]
+    misc.motor_client = AsyncIOMotorClient(env.DB_URL)
+    misc.db_engine = AIOEngine(misc.motor_client, database=env.DB_NAME)
+    misc.db = misc.motor_client[env.DB_NAME]
 
     await init_db()
     asyncio.create_task(init_gtfs_data())
