@@ -47,4 +47,3 @@ async def find_stops_in_area(lat: float, lng: float, distance: int) -> List[Stop
 
 async def get_stops_count() -> int:
     return await misc.db_engine.count(Stop)
-
