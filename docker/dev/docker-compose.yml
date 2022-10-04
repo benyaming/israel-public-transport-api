@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - 4000:4000
+    env_file:
+      - dev.env
+    volumes:
+      - ../..:/workspace
+      - ~/.gitconfig:/root/.gitconfig
+      - ~/.ssh:/root/.ssh
+    command: sleep infinity
+    depends_on:
+      - postgres
+      - mongo
+      # - migrate
+
+  postgres:
+    image: postgres:14.5-alpine
+    restart: always
+    ports:
+      - 15432:5432
+    volumes:
+      - ../data/postgres:/var/lib/postgres/data
+  
+  mongo:
+    image: mongo
+    restart: always
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: root
+    #   MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - 27017:27017
+    # volumes:
+    #   - ../data/mongo:/data/db
