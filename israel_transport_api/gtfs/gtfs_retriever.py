@@ -68,7 +68,13 @@ async def _store_db_data():
 
         stops_to_save = []
         for row in reader:
-            street, city, platform, floor = parse_stop_description(row[3])
+            try:
+                street, city, platform, floor = parse_stop_description(row[3])
+            except (ValueError, IndexError):
+                msg = f'Failed to parse stop description. Row: {row}'
+                logger.exception(msg)
+                continue
+
             stops_to_save.append({
                 '_id': int(row[0]),
                 'code': int(row[1]),
@@ -100,7 +106,13 @@ def _load_memory_data():
         next(reader, None)  # skip headers
 
         for row in reader:
-            from_stop_name, from_city, to_stop_name, to_city = parse_route_long_name(row[3])
+            try:
+                from_stop_name, from_city, to_stop_name, to_city = parse_route_long_name(row[3])
+            except (ValueError, IndexError):
+                msg = f'Failed to parse route long name. Row: {row}'
+                logger.exception(msg)
+                continue
+
             route = Route(
                 id=(row[0]),
                 agency_id=row[1],
