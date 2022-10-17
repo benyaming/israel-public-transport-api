@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-import betterlogging as logging
+import betterlogging as bl
 import uvicorn
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -46,6 +46,6 @@ if __name__ == '__main__':
         host='0.0.0.0' if os.getenv('DOCKER_MODE') else '127.0.0.1',
         port=8000,
         use_colors=True,
-        log_level=logging.DEBUG,
+        log_level=bl.DEBUG,
         log_config='../uvicorn_logger.json'
     )
