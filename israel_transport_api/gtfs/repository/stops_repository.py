@@ -33,6 +33,8 @@ async def find_stop_by_code(stop_code: int) -> Stop:
 
 
 async def find_stops_in_area(lat: float, lng: float, distance: int) -> List[Stop]:
+    query = 'SELECT * FROM stop WHERE st_dwithin(location, st_makepoint(%s, %s), %s)'
+
     radians = (distance / 1000) / 6371
     query = {
         'location': {
