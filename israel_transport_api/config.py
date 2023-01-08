@@ -8,7 +8,7 @@ class Env(BaseSettings):
         env_file_encoding = 'utf-8'
 
     SIRI_URL: str = Field(..., env='SIRI_URL')
-    GTFS_URL: str = Field(..., env='GTFS_FTP_URL')
+    GTFS_URL: str = Field(..., env='GTFS_URL')
     API_KEY: str = Field(..., env='API_KEY')
     ROOT_PATH: str = Field('', env='ROOT_PATH')
     DB_URL: str = Field('localhost', env='DB_URL')
