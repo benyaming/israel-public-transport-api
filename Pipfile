@@ -11,9 +11,14 @@ httpx = '*'
 odmantic = "*"
 motor = "*"
 betterlogging = '*'
-apscheduler = '*'
+apscheduler = '==3.9.1'
+pytz = "*"
 
 [dev-packages]
+black = "*"
 
 [requires]
-python_version = "3.9"
+python_version = "3.10"
+
+[pipenv]
+allow_prereleases = true

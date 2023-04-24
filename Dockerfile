@@ -1,4 +1,4 @@
-FROM python:3.9-slim
+FROM python:10-slim
 
 RUN pip install pipenv
 WORKDIR /home/app
