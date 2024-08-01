@@ -3,8 +3,7 @@ from psycopg.connection_async import AsyncConnection
 
 async def init_db(conn: AsyncConnection):
     query = '''
-        CREATE EXTENSION IF NOT EXISTS postgis;
-        
+        -- Ensure that postgis extension is installed        
         CREATE TABLE IF NOT EXISTS agencies (
             id                     SERIAL CONSTRAINT agency_pk PRIMARY KEY,
             name                   VARCHAR(128) NOT NULL,
