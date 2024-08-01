@@ -66,7 +66,7 @@ class Stop(BaseModel):
     class Config:
         collection = 'stops'
 
-        schema_extra = {
+        json_schema_extra = {
             'example': {
                 'id': 10846,
                 'code': 5200,

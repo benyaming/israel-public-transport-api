@@ -1,5 +1,4 @@
 import asyncio
-import ftplib
 import io
 import logging
 import pathlib
@@ -30,13 +29,13 @@ logger = logging.getLogger(__name__)
 
 
 async def _download_gtfs_data_from_ftp() -> io.BytesIO:
-    logger.info(f'Trying to establish ftp connection with {env.GTFS_FTP_URL}...')
+    logger.info(f'Trying to establish ftp connection with {env.GTFS_URL}...')
 
     filename = 'israel-public-transportation.zip'
     url = f'{env.GTFS_URL}{filename}'
     bio = io.BytesIO()
 
-    logger.debug('Downloading zip file...')
+    logger.info('Downloading zip file...')
 
     async with httpx.AsyncClient(verify=False) as session:  # Until they will fix the server...
         async with session.stream('GET', url) as resp:
@@ -59,7 +58,7 @@ async def _download_gtfs_data():
             GTFS_FP.mkdir()
 
         zip_file.extractall(GTFS_FP)
-    logger.debug('Done.')
+    logger.info('Done.')
 
 
 async def _store_db_data(session, force_load: bool = False):
@@ -77,7 +76,7 @@ async def init_gtfs_data(conn: AsyncConnection, force_download: bool = False):
         n_retries = 5
         for i in range(n_retries, 0, -1):
             try:
-                logger.debug(f'Trying to download data, {i} tries remain...')
+                logger.info(f'Trying to download data, {i} tries remain...')
                 await _download_gtfs_data()
                 await _store_db_data(conn)
             except Exception as e:
