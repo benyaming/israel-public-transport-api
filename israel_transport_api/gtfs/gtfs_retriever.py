@@ -5,6 +5,7 @@ import logging
 import pathlib
 import zipfile
 
+import httpx
 from psycopg.connection_async import AsyncConnection
 
 from israel_transport_api.config import env
@@ -29,16 +30,22 @@ logger = logging.getLogger(__name__)
 
 
 async def _download_gtfs_data_from_ftp() -> io.BytesIO:
-    logger.debug(f'Trying to establish ftp connection with {env.GTFS_FTP_URL}...')
+    logger.info(f'Trying to establish ftp connection with {env.GTFS_FTP_URL}...')
 
-    ftp = ftplib.FTP(env.GTFS_FTP_URL)
-    ftp.login()
-
+    filename = 'israel-public-transportation.zip'
+    url = f'{env.GTFS_URL}{filename}'
     bio = io.BytesIO()
 
     logger.debug('Downloading zip file...')
-    ftp.retrbinary('RETR israel-public-transportation.zip', bio.write)
-    logger.debug('Done.')
+
+    async with httpx.AsyncClient(verify=False) as session:  # Until they will fix the server...
+        async with session.stream('GET', url) as resp:
+            async for chunk in resp.aiter_bytes():
+                bio.write(chunk)
+
+    logger.info('Done.')
+
+    bio.seek(0)
     return bio
 
 
