@@ -1,7 +1,4 @@
-from typing import Tuple, List, Optional
-
-
-def parse_stop_description(s: str) -> List[Optional[str]]:
+def parse_stop_description(s: str) -> list[str | None]:
     parts = s.split(':')
     values = []
     for value in parts[1:-1]:
@@ -15,7 +12,7 @@ def parse_stop_description(s: str) -> List[Optional[str]]:
     return values
 
 
-def parse_route_long_name(s: str) -> Tuple[str, str, str, str]:
+def parse_route_long_name(s: str) -> tuple[str, str, str, str]:
     from_, to = s.split('<->')
     *from_stop_name, from_city = from_.split('-')
     from_stop_name = ' - '.join(from_stop_name)

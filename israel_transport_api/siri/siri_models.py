@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime, date
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -34,7 +33,7 @@ class MonitoredVehicleJourney(BaseModelPascal):
     destination_ref: str  # GTFS ref to destination.
     vehicle_ref: str  # Vehicle's license plate number
     framed_vehicle_journey_ref: FramedVehicleJourneyRef  # class for GTFS ref trip_id.
-    vehicle_location: Optional[VehicleLocation]  # class for vehicle current location.
+    vehicle_location: VehicleLocation | None = None  # class for vehicle current location.
     monitored_call: MonitoredCall  # class for vehicle's predicted arrival time.
 
 
@@ -58,11 +57,11 @@ class MonitoredCall(BaseModelPascal):
     """
     Describes expected vehicle arrival time, predicted by SIRI server
     """
-    stop_point_ref: Optional[str]  # stop_id in GTFS. Usually the same as passed to request.
-    order: Optional[str]  # Monitored stop order. The first stop is at order 1
-    aimed_arrival_time: Optional[datetime]  # Planned arrival time to the Monitored stop. The value will be pass only when the Vehicle have not started the journey.
-    expected_arrival_time: Optional[datetime]  # Expected arrival time to the Monitored stop.
-    arrival_platform_name: Optional[str]  # Arrival platform name, mainly for trains.
+    stop_point_ref: str | None = None  # stop_id in GTFS. Usually the same as passed to request.
+    order: str | None = None  # Monitored stop order. The first stop is at order 1
+    aimed_arrival_time: datetime | None = None  # Planned arrival time to the Monitored stop. The value will be pass only when the Vehicle have not started the journey.
+    expected_arrival_time: datetime | None = None  # Expected arrival time to the Monitored stop.
+    arrival_platform_name: str | None = None  # Arrival platform name, mainly for trains.
 
 
 MonitoredStopVisit.update_forward_refs()
@@ -70,4 +69,3 @@ MonitoredVehicleJourney.update_forward_refs()
 FramedVehicleJourneyRef.update_forward_refs()
 VehicleLocation.update_forward_refs()
 MonitoredCall.update_forward_refs()
-
