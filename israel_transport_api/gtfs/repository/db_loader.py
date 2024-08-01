@@ -7,6 +7,7 @@ from psycopg.types import TypeInfo
 from psycopg.types.shapely import register_shapely
 from shapely.geometry import Point
 
+from israel_transport_api.config import env
 from israel_transport_api.gtfs.utils import parse_route_long_name, parse_stop_description
 from israel_transport_api.gtfs.repository.routes_repository import invalidate_route_cache
 
@@ -298,46 +299,54 @@ async def load_stop_times(conn: AsyncConnection, force_load: bool = False):
     if not fp.exists():
         logger.error('File stop_times.txt not found!')
 
-    with open(fp, 'r') as file:
-        reader = csv.reader(file)
-        next(reader, None)
+    async def insert_batch(batch: list):
+        async with conn.cursor() as acur:
+            insert_query = '''
+                COPY tmp_stop_time (
+                    trip_id, stop_id, stop_sequence
+                ) FROM STDIN
+            '''
+            async with acur.copy(insert_query) as acopy:
+                for stop_time in batch:
+                    await acopy.write_row(stop_time)
 
-        stop_times = []
-
-        for row in reader:
-            stop_times.append([
-                int(row[0]),
-                int(row[3]),
-                int(row[4])
-            ])
+            update_query = '''
+                INSERT INTO stop_times 
+                SELECT tmp_stop_time.* FROM tmp_stop_time 
+                JOIN stops ON tmp_stop_time.stop_id = stops.id
+                JOIN trips ON tmp_stop_time.trip_id = trips.id
+                ON CONFLICT (trip_id, stop_id, stop_sequence) DO UPDATE
+                SET 
+                    trip_id = EXCLUDED.trip_id,
+                    stop_id = EXCLUDED.stop_id,
+                    stop_sequence = EXCLUDED.stop_sequence
+            '''
+            await acur.execute(update_query)
 
     async with conn.cursor() as acur:
         await acur.execute(
             'CREATE TEMP TABLE tmp_stop_time (LIKE stop_times INCLUDING DEFAULTS) ON COMMIT DROP'
         )
 
-        insert_query = '''
-            COPY tmp_stop_time (
-                trip_id, stop_id, stop_sequence
-            ) FROM STDIN
-        '''
+    current_batch = 1
 
-        async with acur.copy(insert_query) as acopy:
-            for stop_time in stop_times:
-                await acopy.write_row(stop_time)
+    with open(fp, 'r') as file:
+        reader = csv.reader(file)
+        next(reader, None)
 
-        update_query = '''
-            INSERT INTO stop_times 
-            SELECT tmp_stop_time.* FROM tmp_stop_time 
-            JOIN stops ON tmp_stop_time.stop_id = stops.id
-            ON CONFLICT (trip_id, stop_id, stop_sequence) DO UPDATE
-            SET 
-                trip_id = EXCLUDED.trip_id,
-                stop_id = EXCLUDED.stop_id,
-                stop_sequence = EXCLUDED.stop_sequence
-        '''
+        stop_times = []
+        for i, row in enumerate(reader):
+            stop_times.append([int(row[0]), int(row[3]), int(row[4])])
 
-        await acur.execute(update_query)
+            if len(stop_times) >= env.DB_BATCH_SIZE:
+                logger.info(f'Inserting butch #{current_batch}')
+                await insert_batch(stop_times)
+                current_batch += 1
+                stop_times = []
+
+        if stop_times:
+            logger.info(f'Inserting butch #{current_batch}')
+            await insert_batch(stop_times)
 
     await conn.commit()
     logger.info('Stop times loaded.')
