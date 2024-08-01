@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime as dt
-from typing import List
 
 from pydantic import parse_obj_as
 from httpx import ReadTimeout
+from psycopg.connection_async import AsyncConnection
 
 from israel_transport_api.config import env
 from israel_transport_api.gtfs.repository import routes_repository, stops_repository
@@ -17,7 +17,7 @@ RETRY_COUNT = 5
 logger = logging.getLogger('siri_client')
 
 
-async def _make_request(stop_code: int, monitoring_interval: int, retry_count: int = 0) -> List[MonitoredStopVisit]:
+async def _make_request(stop_code: int, monitoring_interval: int, retry_count: int = 0) -> list[MonitoredStopVisit]:
     params = {
         'Key': env.API_KEY,
         'MonitoringRef': stop_code,
@@ -33,7 +33,7 @@ async def _make_request(stop_code: int, monitoring_interval: int, retry_count: i
         return await _make_request(stop_code, monitoring_interval, retry_count + 1)
 
     raw_data: dict = resp.json()
-    raw_stop_data: List[dict] = raw_data.get('Siri', {}).get('ServiceDelivery', {}).get('StopMonitoringDelivery', [])
+    raw_stop_data: list[dict] = raw_data.get('Siri', {}).get('ServiceDelivery', {}).get('StopMonitoringDelivery', [])
 
     if len(raw_stop_data) == 0:
         raise SiriException('No data received', 3)
@@ -42,19 +42,23 @@ async def _make_request(stop_code: int, monitoring_interval: int, retry_count: i
         message = raw_stop_data[0].get('ErrorCondition', {}).get('Description')
         raise SiriException(message, 1)
 
-    parsed_data = parse_obj_as(List[MonitoredStopVisit], raw_stop_data[0]['MonitoredStopVisit'])  # currently support for one stop code
+    parsed_data = parse_obj_as(list[MonitoredStopVisit], raw_stop_data[0]['MonitoredStopVisit'])  # currently support for one stop code
     return parsed_data
 
 
-async def get_incoming_routes(stop_code: int, monitoring_interval: int = 30) -> IncomingRoutesResponse:
+async def get_incoming_routes(
+        conn: AsyncConnection,
+        stop_code: int,
+        monitoring_interval: int = 30
+) -> IncomingRoutesResponse:
     siri_data = await _make_request(stop_code, monitoring_interval)
-    stop_info = await stops_repository.find_stop_by_code(stop_code)
+    stop_info = await stops_repository.find_stop_by_code(stop_code, conn)
 
-    incoming_routes: List[IncomingRoute] = []
+    incoming_routes: list[IncomingRoute] = []
     for stop_visit in siri_data:
         arrival_time = stop_visit.monitored_vehicle_journey.monitored_call.expected_arrival_time.replace(tzinfo=None)
         eta = (arrival_time - dt.now()).seconds // 60
-        route = routes_repository.find_route_by_id(stop_visit.monitored_vehicle_journey.line_ref)
+        route = await routes_repository.find_route_by_id(int(stop_visit.monitored_vehicle_journey.line_ref), conn)
         incoming_routes.append(IncomingRoute(eta=eta, route=route))
 
     resp = IncomingRoutesResponse(stop_info=stop_info, incoming_routes=sorted(incoming_routes, key=lambda r: r.eta))

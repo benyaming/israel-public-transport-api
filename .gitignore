@@ -107,3 +107,4 @@ venv.bak/
 Pipfile.lock
 /gtfs_data/*
 /gtfs_data/
+/.pdm-python
