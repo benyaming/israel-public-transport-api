@@ -28,3 +28,8 @@ async def find_nearest_stops(
 @routes_router.get('/{route_id}')
 async def find_route_by_id(request: Request, route_id: int) -> Route:
     return await routes_repository.find_route_by_id(route_id, request.app.state.conn)
+
+
+@routes_router.get('/available_for_stop/{stop_code}')
+async def get_available_routes_for_stop(request: Request, stop_code: int) -> list[Route]:
+    return await routes_repository.get_available_routes_for_stop(stop_code, request.app.state.conn)

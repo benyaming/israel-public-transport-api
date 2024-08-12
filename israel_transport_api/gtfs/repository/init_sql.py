@@ -42,24 +42,10 @@ async def init_db(conn: AsyncConnection):
             color                  VARCHAR(128)
         );
         
-        CREATE TABLE IF NOT EXISTS trips (
-            id                     BIGSERIAL CONSTRAINT trip_pk PRIMARY KEY,
-            route_id               INTEGER REFERENCES routes(id),
-            service_id             INTEGER,
-            headsign               VARCHAR(128),
-            direction_id           INTEGER
-        );
-        
-        CREATE TABLE IF NOT EXISTS stop_times (
-            trip_id BIGINT NOT NULL REFERENCES trips(id),
-            stop_id INT NOT NULL REFERENCES stops(id),
-            stop_sequence INTEGER NOT NULL,
-            PRIMARY KEY (trip_id, stop_id, stop_sequence)
-        );
-        
-        -- Indexes for performance
-        CREATE INDEX IF NOT EXISTS idx_stop_times_trip_id ON stop_times (trip_id);
-        CREATE INDEX IF NOT EXISTS idx_stop_times_stop_id ON stop_times (stop_id);
+        CREATE TABLE IF NOT EXISTS routes_for_stop (
+            stop_code              INTEGER PRIMARY KEY,
+            route_ids              INTEGER[]
+          );
     '''
 
     await conn.execute(query)

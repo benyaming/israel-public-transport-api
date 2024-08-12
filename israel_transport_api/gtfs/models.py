@@ -1,9 +1,16 @@
 from pydantic import BaseModel
 
 
+class Agency(BaseModel):
+    id: int
+    name: str
+    url: str
+    phone: str
+
+
 class Route(BaseModel):
     id: int
-    agency_id: int
+    agency: Agency
     short_name: str
     from_stop_name: str
     to_stop_name: str
@@ -17,7 +24,6 @@ class Route(BaseModel):
     def from_row(cls, row: list) -> 'Route':
         return cls(
             id=row[0],
-            agency_id=row[1],
             short_name=row[2],
             from_stop_name=row[3],
             to_stop_name=row[4],
@@ -25,7 +31,13 @@ class Route(BaseModel):
             to_city=row[6],
             description=row[7],
             type=row[8],
-            color=row[9]
+            color=row[9],
+            agency=Agency(
+                id=row[10],
+                name=row[11],
+                url=row[12],
+                phone=row[15]
+            )
         )
 
 
