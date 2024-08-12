@@ -66,8 +66,7 @@ async def _store_db_data(session, force_load: bool = False):
     await db_loader.load_agencies(session, force_load)
     await db_loader.load_stops(session, force_load)
     await db_loader.load_routes(session, force_load)
-    await db_loader.load_trips(session, force_load)
-    await db_loader.load_stop_times(session, force_load)
+    await db_loader.load_routes_for_stop(session, force_load)
 
 
 async def init_gtfs_data(conn: AsyncConnection, force_download: bool = False):

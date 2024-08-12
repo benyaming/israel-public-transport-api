@@ -1,6 +1,7 @@
 import csv
 import logging
 import pathlib
+from collections import defaultdict
 
 from psycopg import AsyncConnection
 from psycopg.types import TypeInfo
@@ -39,9 +40,7 @@ async def load_agencies(conn: AsyncConnection, force_load: bool = False):
             rows.append(line)
 
     async with conn.cursor() as acur:
-        await acur.execute(
-            'CREATE TEMP TABLE tmp_agency (LIKE agencies INCLUDING DEFAULTS) ON COMMIT DROP'
-        )
+        await acur.execute('CREATE TEMP TABLE tmp_agency (LIKE agencies INCLUDING DEFAULTS) ON COMMIT DROP')
 
         insert_query = '''
             COPY tmp_agency (
@@ -114,9 +113,7 @@ async def load_stops(conn: AsyncConnection, force_load: bool = False):
     register_shapely(info, conn)
 
     async with conn.cursor() as acur:
-        await acur.execute(
-            'CREATE TEMP TABLE tmp_stop (LIKE stops INCLUDING DEFAULTS) ON COMMIT DROP'
-        )
+        await acur.execute('CREATE TEMP TABLE tmp_stop (LIKE stops INCLUDING DEFAULTS) ON COMMIT DROP')
 
         insert_query = '''
             COPY tmp_stop (
@@ -190,9 +187,7 @@ async def load_routes(conn: AsyncConnection, force_load: bool = False):
             ])
 
     async with conn.cursor() as acur:
-        await acur.execute(
-            'CREATE TEMP TABLE tmp_route (LIKE routes INCLUDING DEFAULTS) ON COMMIT DROP'
-        )
+        await acur.execute('CREATE TEMP TABLE tmp_route (LIKE routes INCLUDING DEFAULTS) ON COMMIT DROP')
 
         insert_query = '''
             COPY tmp_route (
@@ -229,124 +224,75 @@ async def load_routes(conn: AsyncConnection, force_load: bool = False):
     await invalidate_route_cache(conn)
 
 
-async def load_trips(conn: AsyncConnection, force_load: bool = False):
-    logger.info('Loading trips...')
+async def load_routes_for_stop(conn: AsyncConnection, force_load: bool = False):
+    logger.info('Loading routes for stop...')
 
-    if not force_load and (await (await conn.execute('SELECT COUNT(*) FROM trips')).fetchone())[0] > 0:
-        logger.info('Trips already loaded.')
+    if not force_load and (await (await conn.execute('SELECT COUNT(*) FROM routes_for_stop')).fetchone())[0] > 0:
+        logger.info('Routes for stop already loaded.')
         return
 
-    fp = GTFS_FP / 'trips.txt'
-    if not fp.exists():
-        logger.error('File trips.txt not found!')
+    # Create a dictionary to hold stop_id to stop_code mapping
+    stop_id_to_code = {}
 
-    with open(fp, 'r') as file:
-        reader = csv.reader(file)
-        next(reader, None)
+    with open(GTFS_FP / 'stops.txt', mode='r', newline='', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader)
+        for row in reader:
+            stop_id = row[0]
+            stop_code = row[1]
+            stop_id_to_code[stop_id] = stop_code
 
-        trips = []
+    # Create a dictionary to hold trip_id to route_id mapping
+    trip_to_route = {}
+
+    with open(GTFS_FP / 'trips.txt', mode='r', newline='', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader)
 
         for row in reader:
-            trips.append([
-                int(row[2]),
-                int(row[0]),
-                int(row[1]),
-                row[3],
-                int(row[4])
-            ])
+            trip_id = row[2]
+            route_id = row[0]
+            trip_to_route[trip_id] = route_id
+
+    # Create a dictionary to hold the stop code to routes mapping using defaultdict
+    stop_routes_dict = defaultdict(set)
+
+    with open(GTFS_FP / 'stop_times.txt', mode='r', newline='', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader)
+
+        for row in reader:
+            stop_id = row[3]
+            trip_id = row[0]
+            route_id = trip_to_route[trip_id]
+
+            # Convert stop_id to stop_code
+            stop_code = stop_id_to_code.get(stop_id, None)
+            if stop_code:
+                stop_routes_dict[stop_code].add(route_id)
+
+    stop_routes_dict = {stop_code: list(routes) for stop_code, routes in stop_routes_dict.items()}
+
+    await conn.execute('CREATE TEMP TABLE tmp_routes_for_stop (LIKE routes_for_stop INCLUDING DEFAULTS) ON COMMIT DROP')
+
+    insert_query = '''
+        COPY tmp_routes_for_stop (stop_code, route_ids)
+        FROM STDIN
+    '''
 
     async with conn.cursor() as acur:
-        await acur.execute(
-            'CREATE TEMP TABLE tmp_trip (LIKE trips INCLUDING DEFAULTS) ON COMMIT DROP'
-        )
-
-        insert_query = '''
-            COPY tmp_trip (
-                id, route_id, service_id, headsign, direction_id
-            ) FROM STDIN
-        '''
-
         async with acur.copy(insert_query) as acopy:
-            for trip in trips:
-                await acopy.write_row(trip)
+            for stop_code, route_ids in stop_routes_dict.items():
+                await acopy.write_row((stop_code, route_ids))
 
         update_query = '''
-            INSERT INTO trips 
-            SELECT * FROM tmp_trip 
-            ON CONFLICT (id) DO UPDATE
-            SET 
-                id = EXCLUDED.id,
-                route_id = EXCLUDED.route_id,
-                service_id = EXCLUDED.service_id,
-                headsign = EXCLUDED.headsign,
-                direction_id = EXCLUDED.direction_id
+            INSERT INTO routes_for_stop
+            SELECT * FROM tmp_routes_for_stop
+            ON CONFLICT (stop_code) DO UPDATE
+            SET route_ids = EXCLUDED.route_ids
         '''
 
         await acur.execute(update_query)
 
     await conn.commit()
-    logger.info('Trips loaded.')
-
-
-async def load_stop_times(conn: AsyncConnection, force_load: bool = False):
-    logger.info('Loading stop times...')
-
-    if not force_load and (await (await conn.execute('SELECT COUNT(*) FROM stop_times')).fetchone())[0] > 0:
-        logger.info('Stop times already loaded.')
-        return
-
-    fp = GTFS_FP / 'stop_times.txt'
-    if not fp.exists():
-        logger.error('File stop_times.txt not found!')
-
-    async def insert_batch(batch: list):
-        async with conn.cursor() as acur:
-            insert_query = '''
-                COPY tmp_stop_time (
-                    trip_id, stop_id, stop_sequence
-                ) FROM STDIN
-            '''
-            async with acur.copy(insert_query) as acopy:
-                for stop_time in batch:
-                    await acopy.write_row(stop_time)
-
-            update_query = '''
-                INSERT INTO stop_times 
-                SELECT tmp_stop_time.* FROM tmp_stop_time 
-                JOIN stops ON tmp_stop_time.stop_id = stops.id
-                JOIN trips ON tmp_stop_time.trip_id = trips.id
-                ON CONFLICT (trip_id, stop_id, stop_sequence) DO UPDATE
-                SET 
-                    trip_id = EXCLUDED.trip_id,
-                    stop_id = EXCLUDED.stop_id,
-                    stop_sequence = EXCLUDED.stop_sequence
-            '''
-            await acur.execute(update_query)
-
-    async with conn.cursor() as acur:
-        await acur.execute(
-            'CREATE TEMP TABLE tmp_stop_time (LIKE stop_times INCLUDING DEFAULTS) ON COMMIT DROP'
-        )
-
-    current_batch = 1
-
-    with open(fp, 'r') as file:
-        reader = csv.reader(file)
-        next(reader, None)
-
-        stop_times = []
-        for i, row in enumerate(reader):
-            stop_times.append([int(row[0]), int(row[3]), int(row[4])])
-
-            if len(stop_times) >= env.DB_BATCH_SIZE:
-                logger.info(f'Inserting butch #{current_batch}')
-                await insert_batch(stop_times)
-                current_batch += 1
-                stop_times = []
-
-        if stop_times:
-            logger.info(f'Inserting butch #{current_batch}')
-            await insert_batch(stop_times)
-
-    await conn.commit()
-    logger.info('Stop times loaded.')
+    logger.info('Routes for stop loaded.')
