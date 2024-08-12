@@ -6,7 +6,7 @@ authors = [
     {name = "Benyamin Ginzburg", email = "benyomin.94@gmail.com"},
 ]
 dependencies = [
-    "fastapi==0.111.1",
+    "fastapi[websockets]==0.111.1",
     "pydantic==2.8.2",
     "pydantic-settings==2.4.0",
     "uvicorn==0.30.4",
