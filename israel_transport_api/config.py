@@ -13,7 +13,7 @@ class Env(BaseSettings):
     SCHED_HOURS: int
     SCHED_MINS: int
 
-    DB_BATCH_SIZE: int = 300_000
+    WS_UPDATE_INTERVAL: int = 5
 
 
 env = Env()

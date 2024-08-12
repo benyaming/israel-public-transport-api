@@ -3,10 +3,9 @@ from asyncio import sleep
 from fastapi import APIRouter, Path, Query, Request, WebSocket, WebSocketDisconnect
 
 from israel_transport_api.siri.client import get_incoming_routes, get_vehicle_location
-from israel_transport_api.siri.models import IncomingRoutesResponse, VehicleLocationResponse
+from israel_transport_api.siri.models import IncomingRoutesResponse
+from israel_transport_api.config import env
 
-
-WS_UPDATE_INTERVAL = 3
 
 siri_router = APIRouter(prefix='/siri', tags=['Siri'])
 
@@ -28,10 +27,11 @@ async def track_vehicle(
 ):
     await ws.accept()
     try:
+        previous_resp = None
         while True:
             resp = await get_vehicle_location(vehicle_plate_number, stop_code)
-            resp and await ws.send_json(resp.dict())
-            await sleep(WS_UPDATE_INTERVAL)
+            resp and previous_resp != resp and await ws.send_json(resp.model_dump())
+            previous_resp = resp
+            await sleep(env.WS_UPDATE_INTERVAL)
     except WebSocketDisconnect:
         pass
-
