@@ -68,8 +68,8 @@ async def get_available_routes_for_stop(stop_code: int, conn: AsyncConnection) -
     resp = await (await conn.cursor().execute(query, (stop_code,))).fetchall()
     routes = [Route.from_row(route) for route in resp]
 
-    # Remove routes with the same short_name
-    routes = list({route.short_name: route for route in routes}.values())
+    # Remove routes with the same short_name and agency
+    routes = list({(route.short_name, route.agency.id): route for route in routes}.values())
 
     routes.sort(key=lambda r: int(re.sub(r'\D', '', r.short_name)) or 0)
     return routes
