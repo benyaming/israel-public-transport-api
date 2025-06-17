@@ -2,7 +2,7 @@ import logging
 from datetime import datetime as dt
 
 from pydantic import parse_obj_as
-from httpx import ReadTimeout
+from httpx import ReadTimeout, ConnectError
 from psycopg.connection_async import AsyncConnection
 
 from israel_transport_api.config import env
@@ -12,7 +12,7 @@ from israel_transport_api.siri.exceptions import SiriException
 from israel_transport_api.siri.models import IncomingRoute, IncomingRoutesResponse
 from israel_transport_api.siri.siri_models import MonitoredStopVisit, VehicleLocation
 
-RETRY_COUNT = 5
+RETRY_COUNT = 3
 logger = logging.getLogger('siri_client')
 
 
@@ -25,17 +25,17 @@ async def _make_request(stop_code: int, monitoring_interval: int, retry_count: i
 
     try:
         resp = await http_client.get(env.SIRI_URL, params=params)
-    except ReadTimeout:
+    except (ReadTimeout, ConnectError):
         logger.error('Read timeout!')
-        if retry_count < RETRY_COUNT:
-            raise
+        if retry_count > RETRY_COUNT:
+            raise SiriException('Siri API is not responding', 2, status_code=502)
         return await _make_request(stop_code, monitoring_interval, retry_count + 1)
 
     raw_data: dict = resp.json()
     raw_stop_data: list[dict] = raw_data.get('Siri', {}).get('ServiceDelivery', {}).get('StopMonitoringDelivery', [])
 
     if len(raw_stop_data) == 0:
-        raise SiriException('No data received', 3)
+        raise SiriException('No data received', 3, status_code=400)
 
     if raw_stop_data[0]['Status'] != 'true':
         message = raw_stop_data[0].get('ErrorCondition', {}).get('Description')
@@ -46,12 +46,20 @@ async def _make_request(stop_code: int, monitoring_interval: int, retry_count: i
 
 
 async def get_incoming_routes(
-        conn: AsyncConnection,
-        stop_code: int,
-        monitoring_interval: int = 30
+    conn: AsyncConnection,
+    *,
+    stop_code: int | None = None,
+    stop_id: int | None = None,
+    monitoring_interval: int = 30
 ) -> IncomingRoutesResponse:
-    siri_data = await _make_request(stop_code, monitoring_interval)
-    stop_info = await stops_repository.find_stop_by_code(stop_code, conn)
+    if stop_id is not None:
+        stop_info = await stops_repository.find_stop_by_id(stop_id, conn)
+    elif stop_code is not None:
+        stop_info = await stops_repository.find_stop_by_code(stop_code, conn)
+    else:
+        raise ValueError('Either stop_code or stop_id must be provided')
+
+    siri_data = await _make_request(stop_info.code, monitoring_interval)
 
     incoming_routes: list[IncomingRoute] = []
     for stop_visit in siri_data:

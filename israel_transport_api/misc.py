@@ -9,4 +9,4 @@ from israel_transport_api.config import env
 scheduler = AsyncIOScheduler()
 daily_trigger = CronTrigger(hour=env.SCHED_HOURS, minute=env.SCHED_MINS, timezone=pytz.timezone('Asia/Jerusalem'))
 
-http_client = AsyncClient()
+http_client = AsyncClient(timeout=3.0)

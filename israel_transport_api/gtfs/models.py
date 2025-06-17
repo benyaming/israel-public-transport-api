@@ -1,4 +1,22 @@
-from pydantic import BaseModel
+from enum import StrEnum
+
+from pydantic import BaseModel, computed_field
+
+
+class StopTypeConstants:
+    jerusalem_light_rail = 'מסילת ברזל'
+    gush_dan_light_rail = 'מסילת ברזל קו אדום גוש דן'
+    railway_station = 'תחנת רכבת'
+
+
+class StopType(StrEnum):
+    bus_stop = 'bus_stop'
+    bus_central_station = 'bus_central_station'
+    bus_central_station_platform = 'bus_central_station_platform'
+    jerusalem_light_rail_stop = 'jerusalem_light_rail_stop'
+    gush_dan_light_rail_station = 'gush_dan_light_rail_station'
+    gush_dan_light_rail_platform = 'gush_dan_light_rail_platform'
+    railway_station = 'railway_station'
 
 
 class Agency(BaseModel):
@@ -52,12 +70,30 @@ class Stop(BaseModel):
     name: str
     city: str | None = None
     street: str | None = None
-    floor: str | None = None
+    floor: int | None = None
     platform: int | None = None
     location: StopLocation
     location_type: int
     parent_station_id: int | None = None
     zone_id: int | None = None
+    
+    @computed_field
+    @property
+    def stop_type(self) -> StopType:
+        if self.location_type == 1:
+            if self.street == StopTypeConstants.gush_dan_light_rail:
+                return StopType.gush_dan_light_rail_station
+            return StopType.bus_central_station
+        elif self.street == StopTypeConstants.jerusalem_light_rail:
+            return StopType.jerusalem_light_rail_stop
+        elif self.street == StopTypeConstants.gush_dan_light_rail and self.platform is not None:
+            return StopType.gush_dan_light_rail_platform
+        elif self.floor == StopTypeConstants.railway_station or self.city is None:
+            return StopType.railway_station
+        elif self.platform is not None:
+            return StopType.bus_central_station_platform
+        
+        return StopType.bus_stop
 
     @classmethod
     def from_row(cls, row: list) -> 'Stop':
