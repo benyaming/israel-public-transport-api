@@ -27,7 +27,7 @@ async def _make_request(stop_code: int, monitoring_interval: int, retry_count: i
         resp = await http_client.get(env.SIRI_URL, params=params)
     except (ReadTimeout, ConnectError):
         logger.error('Read timeout!')
-        if retry_count > RETRY_COUNT:
+        if retry_count >= RETRY_COUNT:
             raise SiriException('Siri API is not responding', 2, status_code=502)
         return await _make_request(stop_code, monitoring_interval, retry_count + 1)
 
