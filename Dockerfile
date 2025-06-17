@@ -1,12 +1,12 @@
-FROM python:3.9-slim
+FROM python:3.12-slim
 
-RUN pip install pdm
+RUN pip install uv
 WORKDIR /home/app
 COPY . .
 WORKDIR /home/app/israel_transport_api
-RUN pdm install
+RUN uv sync
 ENV TZ=Asia/Jerusalem
 ENV PYTHONPATH=/home/app
 ENV DOCKER_MODE=true
 EXPOSE 8000
-CMD ["pdm", "run", "python", "main.py"]
+CMD ["uv", "run", "python", "main.py"]
