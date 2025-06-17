@@ -8,7 +8,6 @@ from psycopg.types import TypeInfo
 from psycopg.types.shapely import register_shapely
 from shapely.geometry import Point
 
-from israel_transport_api.config import env
 from israel_transport_api.gtfs.utils import parse_route_long_name, parse_stop_description
 from israel_transport_api.gtfs.repository.routes_repository import invalidate_route_cache
 
