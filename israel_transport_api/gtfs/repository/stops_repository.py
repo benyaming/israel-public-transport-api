@@ -47,6 +47,28 @@ async def find_stops_in_area(lat: float, lng: float, distance: int, conn: AsyncC
     return [Stop.from_row(stop) for stop in stops]
 
 
+async def search_stops_by_name(query: str, conn: AsyncConnection, limit: int = 20) -> list[Stop]:
+    query = query.strip()
+    if not query:
+        return []
+    pattern = f'%{query}%'
+    prefix = f'{query}%'
+    stops = await (await conn.cursor().execute(
+        '''
+            SELECT
+                *,
+                st_x(st_geomfromwkb(location)),
+                st_y(st_geomfromwkb(location))
+            FROM stops
+            WHERE name ILIKE %s
+            ORDER BY (name ILIKE %s) DESC, length(name), name
+            LIMIT %s
+        ''',
+        (pattern, prefix, limit)
+    )).fetchall()
+    return [Stop.from_row(stop) for stop in stops]
+
+
 async def find_stops_by_parent_id(parent_id: int, conn: AsyncConnection) -> list[Stop]:
     stops = await (await conn.cursor().execute(
         '''

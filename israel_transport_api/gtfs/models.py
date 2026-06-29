@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, ConfigDict, computed_field
 
 
 class StopTypeConstants:
@@ -111,10 +111,8 @@ class Stop(BaseModel):
             zone_id=row[10]
         )
 
-    class Config:
-        collection = 'stops'
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             'example': {
                 'id': 10846,
                 'code': 5200,
@@ -132,3 +130,4 @@ class Stop(BaseModel):
                 'zone_id': '3000'
             }
         }
+    )

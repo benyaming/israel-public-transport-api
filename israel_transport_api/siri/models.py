@@ -30,4 +30,4 @@ class VehicleLocationResponse(BaseModel):
         )
 
 
-IncomingRoutesResponse.update_forward_refs()
+IncomingRoutesResponse.model_rebuild()

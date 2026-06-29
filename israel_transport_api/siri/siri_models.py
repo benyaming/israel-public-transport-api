@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime, date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
+
+def _to_pascal(string: str) -> str:
+    return ''.join(word.capitalize() for word in string.split('_'))
 
 
 class BaseModelPascal(BaseModel):
-    class Config:
-
-        @classmethod
-        def alias_generator(cls, string: str) -> str:
-            return ''.join(word.capitalize() for word in string.split('_'))
+    model_config = ConfigDict(alias_generator=_to_pascal)
 
 
 class MonitoredStopVisit(BaseModelPascal):
@@ -64,8 +64,8 @@ class MonitoredCall(BaseModelPascal):
     arrival_platform_name: str | None = None  # Arrival platform name, mainly for trains.
 
 
-MonitoredStopVisit.update_forward_refs()
-MonitoredVehicleJourney.update_forward_refs()
-FramedVehicleJourneyRef.update_forward_refs()
-VehicleLocation.update_forward_refs()
-MonitoredCall.update_forward_refs()
+MonitoredStopVisit.model_rebuild()
+MonitoredVehicleJourney.model_rebuild()
+FramedVehicleJourneyRef.model_rebuild()
+VehicleLocation.model_rebuild()
+MonitoredCall.model_rebuild()
