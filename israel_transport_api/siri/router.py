@@ -20,7 +20,7 @@ async def get_routes_for_stop(
 
 
 @siri_router.get('/get_routes_for_stop_by_id/{stop_id}')
-async def get_routes_for_stop(
+async def get_routes_for_stop_by_id(
         request: Request,
         stop_id: int = Path(..., description='Stop id', examples=[35136]),
         monitoring_interval: int = Query(30, description='Monitoring interval in minutes')

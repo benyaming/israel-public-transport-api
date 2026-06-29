@@ -77,6 +77,7 @@ async def find_stops_by_parent_id(parent_stop_id: int) -> list[Stop]:
 @mcp.tool()
 async def find_nearest_stops(lat: float, lng: float, radius: int = 100) -> list[Stop]:
     """Find stops within ``radius`` meters of a latitude/longitude point (radius max 5000)."""
+    radius = max(0, min(radius, 5000))
     return await stops_repository.find_stops_in_area(lat, lng, radius, _get_conn())
 
 

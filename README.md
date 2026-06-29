@@ -111,5 +111,5 @@ running behind a reverse proxy. To enable it, set `MCP_ALLOWED_HOSTS` (and optio
 `MCP_ALLOWED_ORIGINS`) as JSON arrays — `"host:*"` port wildcards are supported:
 
 ```
-MCP_ALLOWED_HOSTS=["zmanim.ginzburg.io", "localhost:*"]
+MCP_ALLOWED_HOSTS='["zmanim.ginzburg.io", "localhost:*"]'
 ```

@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,8 +21,8 @@ class Env(BaseSettings):
     # "host:*" port wildcards). Empty (default) disables the check, which is
     # appropriate when the service runs behind a reverse proxy. Provide values as a
     # JSON array, e.g. MCP_ALLOWED_HOSTS='["example.com", "localhost:*"]'.
-    MCP_ALLOWED_HOSTS: list[str] = []
-    MCP_ALLOWED_ORIGINS: list[str] = []
+    MCP_ALLOWED_HOSTS: list[str] = Field(default_factory=list)
+    MCP_ALLOWED_ORIGINS: list[str] = Field(default_factory=list)
 
 
 env = Env()

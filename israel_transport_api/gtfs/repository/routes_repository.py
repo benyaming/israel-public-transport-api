@@ -8,6 +8,9 @@ from israel_transport_api.gtfs.models import Route
 
 _ROUTES_CACHE: dict[int, Route] = {}
 
+# Upper bound on rows fetched by search_routes before de-duplication.
+_SEARCH_SCAN_CAP = 500
+
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +68,12 @@ def _route_sort_key(route: Route, query: str | None = None):
 
 
 async def search_routes(query: str, conn: AsyncConnection, limit: int = 20) -> list[Route]:
+    query = query.strip()
+    if not query:
+        return []
     pattern = f'%{query}%'
+    # Cap the raw scan so a broad substring can't pull the whole routes table into
+    # memory before de-duplication; plenty of headroom over `limit` distinct lines.
     resp = await (await conn.cursor().execute(
         '''
             SELECT DISTINCT r.*, a.*
@@ -75,8 +83,9 @@ async def search_routes(query: str, conn: AsyncConnection, limit: int = 20) -> l
                OR r.from_city ILIKE %s
                OR r.to_city ILIKE %s
                OR r.description ILIKE %s
+            LIMIT %s
         ''',
-        (pattern, pattern, pattern, pattern)
+        (pattern, pattern, pattern, pattern, _SEARCH_SCAN_CAP)
     )).fetchall()
     routes = [Route.from_row(route) for route in resp]
 
