@@ -28,13 +28,13 @@ nothing extra needs to be started — running the API serves the MCP endpoint to
 ### Connecting a client
 
 This is a **streamable-HTTP** server, so point clients at the `/mcp` URL —
-`https://zmanim.ginzburg.io/mcp` for the hosted instance (or `http://localhost:8000/mcp`
+`http://api.ginzburg.io/il_transport/mcp` for the hosted instance (or `http://localhost:8000/mcp`
 when running locally). Below are configs for the most popular MCP clients.
 
 #### Claude Code
 
 ```sh
-claude mcp add --transport http israel-transport https://zmanim.ginzburg.io/mcp
+claude mcp add --transport http israel-transport http://api.ginzburg.io/il_transport/mcp
 ```
 
 #### Claude Desktop
@@ -50,7 +50,7 @@ For older versions whose `claude_desktop_config.json` only speaks stdio, bridge 
   "mcpServers": {
     "israel-transport": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://zmanim.ginzburg.io/mcp"]
+      "args": ["-y", "mcp-remote", "http://api.ginzburg.io/il_transport/mcp"]
     }
   }
 }
@@ -60,9 +60,9 @@ For older versions whose `claude_desktop_config.json` only speaks stdio, bridge 
 
 ChatGPT connects to remote MCP servers as **custom connectors** (available on paid
 plans). Enable **Settings → Connectors → Advanced → Developer mode**, then **Add custom
-connector** and paste the server URL `https://zmanim.ginzburg.io/mcp`. ChatGPT cannot run
-local stdio servers and requires a public **HTTPS** endpoint, so the hosted URL (not
-`localhost`) must be used.
+connector** and paste the server URL `https://api.ginzburg.io/il_transport/mcp`. ChatGPT cannot
+run local stdio servers and requires a public **HTTPS** endpoint (note the `https://` — a
+plain-`http` URL or `localhost` will not be accepted).
 
 #### Codex
 
@@ -73,7 +73,7 @@ In `~/.codex/config.toml` (HTTP transport requires the rmcp client feature):
 experimental_use_rmcp_client = true
 
 [mcp_servers.israel-transport]
-url = "https://zmanim.ginzburg.io/mcp"
+url = "http://api.ginzburg.io/il_transport/mcp"
 ```
 
 #### VS Code (GitHub Copilot agent mode)
@@ -85,7 +85,7 @@ In `.vscode/mcp.json`:
   "servers": {
     "israel-transport": {
       "type": "http",
-      "url": "https://zmanim.ginzburg.io/mcp"
+      "url": "http://api.ginzburg.io/il_transport/mcp"
     }
   }
 }
@@ -98,7 +98,7 @@ In `.vscode/mcp.json`:
   "mcpServers": {
     "israel-transport": {
       "type": "http",
-      "url": "https://zmanim.ginzburg.io/mcp"
+      "url": "http://api.ginzburg.io/il_transport/mcp"
     }
   }
 }
@@ -111,5 +111,5 @@ running behind a reverse proxy. To enable it, set `MCP_ALLOWED_HOSTS` (and optio
 `MCP_ALLOWED_ORIGINS`) as JSON arrays — `"host:*"` port wildcards are supported:
 
 ```
-MCP_ALLOWED_HOSTS='["zmanim.ginzburg.io", "localhost:*"]'
+MCP_ALLOWED_HOSTS='["api.ginzburg.io", "localhost:*"]'
 ```
