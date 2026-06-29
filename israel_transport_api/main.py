@@ -8,7 +8,7 @@ import betterlogging as logging
 from fastapi import FastAPI
 from psycopg.connection_async import AsyncConnection
 
-from israel_transport_api import misc
+from israel_transport_api import misc, mcp_server
 from israel_transport_api.__version__ import version
 from israel_transport_api.config import env
 from israel_transport_api.gtfs import init_gtfs_data, stops_router, routes_router
@@ -20,13 +20,17 @@ from israel_transport_api.siri import siri_router
 async def lifespan(_):
     conn = await AsyncConnection.connect(env.DB_DSN)
     app.state.conn = conn
+    mcp_server.set_connection(conn)
 
     misc.scheduler.add_job(init_gtfs_data, args=(conn, True,), trigger=daily_trigger)
     misc.scheduler.start()
 
     asyncio.create_task(init_gtfs_data(conn))
 
-    yield
+    # Run the MCP server's session manager alongside the FastAPI app so the mounted
+    # streamable-HTTP endpoint at /mcp is served.
+    async with mcp_server.mcp.session_manager.run():
+        yield
 
 
 app = FastAPI(
@@ -41,6 +45,9 @@ app = FastAPI(
 app.include_router(stops_router)
 app.include_router(routes_router)
 app.include_router(siri_router)
+
+# Expose the same operations over the Model Context Protocol at /mcp.
+app.mount('/mcp', mcp_server.mcp.streamable_http_app())
 
 if __name__ == '__main__':
     if sys.platform == "win32":

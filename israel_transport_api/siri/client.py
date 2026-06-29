@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime as dt
 
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from httpx import ReadTimeout, ConnectError
 from psycopg.connection_async import AsyncConnection
 
@@ -41,7 +41,7 @@ async def _make_request(stop_code: int, monitoring_interval: int, retry_count: i
         message = raw_stop_data[0].get('ErrorCondition', {}).get('Description')
         raise SiriException(message, 1)
 
-    parsed_data = parse_obj_as(list[MonitoredStopVisit], raw_stop_data[0]['MonitoredStopVisit'])  # currently support for one stop code
+    parsed_data = TypeAdapter(list[MonitoredStopVisit]).validate_python(raw_stop_data[0]['MonitoredStopVisit'])  # currently support for one stop code
     return parsed_data
 
 
@@ -87,6 +87,6 @@ async def get_vehicle_location(vehicle_plate_number: str, stop_code: int) -> Veh
         )
     )
     if len(vehicle) == 0:
-        raise ValueError  # todo
+        raise ValueError(f'Vehicle {vehicle_plate_number} is not currently reported as inbound to stop {stop_code}')
     current_location = vehicle[0].monitored_vehicle_journey.vehicle_location
     return current_location

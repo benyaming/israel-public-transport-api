@@ -10,7 +10,7 @@ routes_router = APIRouter(prefix='/route', tags=['Route'])
 @stops_router.get('/by_code/{stop_code}')
 async def find_stop_by_code(
     request: Request,
-    stop_code: int = Path(..., description='Stop code', example=5200)
+    stop_code: int = Path(..., description='Stop code', examples=[5200])
 ) -> Stop:
     return await stops_repository.find_stop_by_code(stop_code, request.app.state.conn)
 
@@ -18,7 +18,7 @@ async def find_stop_by_code(
 @stops_router.get('/by_id/{stop_id}')
 async def find_stop_by_id(
     request: Request,
-    stop_id: int = Path(..., description='Stop id', example=10846)
+    stop_id: int = Path(..., description='Stop id', examples=[10846])
 ) -> Stop:
     return await stops_repository.find_stop_by_id(stop_id, request.app.state.conn)
 
@@ -26,7 +26,7 @@ async def find_stop_by_id(
 @stops_router.get('/by_parent_id/{parent_stop_id}')
 async def find_stop_by_parent_id(
     request: Request,
-    parent_stop_id: int = Path(..., description='Parent stop id', example=48631)
+    parent_stop_id: int = Path(..., description='Parent stop id', examples=[48631])
 ) -> list[Stop]:
     return await stops_repository.find_stops_by_parent_id(parent_stop_id, request.app.state.conn)
 

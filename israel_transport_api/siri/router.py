@@ -13,7 +13,7 @@ siri_router = APIRouter(prefix='/siri', tags=['Siri'])
 @siri_router.get('/get_routes_for_stop/{stop_code}')
 async def get_routes_for_stop(
         request: Request,
-        stop_code: int = Path(..., description='Stop code', example=5200),
+        stop_code: int = Path(..., description='Stop code', examples=[5200]),
         monitoring_interval: int = Query(30, description='Monitoring interval in minutes')
 ) -> IncomingRoutesResponse:
     return await get_incoming_routes(request.app.state.conn, stop_code=stop_code, monitoring_interval=monitoring_interval)
@@ -22,7 +22,7 @@ async def get_routes_for_stop(
 @siri_router.get('/get_routes_for_stop_by_id/{stop_id}')
 async def get_routes_for_stop(
         request: Request,
-        stop_id: int = Path(..., description='Stop id', example=35136),
+        stop_id: int = Path(..., description='Stop id', examples=[35136]),
         monitoring_interval: int = Query(30, description='Monitoring interval in minutes')
 ) -> IncomingRoutesResponse:
     return await get_incoming_routes(request.app.state.conn, stop_id=stop_id, monitoring_interval=monitoring_interval)

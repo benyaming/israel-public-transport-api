@@ -57,6 +57,39 @@ async def get_all_routes(conn: AsyncConnection) -> list[Route]:
     return [Route.from_row(route) for route in routes]
 
 
+def _route_sort_key(route: Route, query: str | None = None):
+    digits = re.sub(r'\D', '', route.short_name)
+    numeric = int(digits) if digits else 0
+    # Exact short_name matches first (when searching), then by numeric line, then name.
+    return route.short_name != query, numeric, route.short_name
+
+
+async def search_routes(query: str, conn: AsyncConnection, limit: int = 20) -> list[Route]:
+    pattern = f'%{query}%'
+    resp = await (await conn.cursor().execute(
+        '''
+            SELECT DISTINCT r.*, a.*
+            FROM routes r
+            LEFT JOIN agencies a ON a.id = r.agency_id
+            WHERE r.short_name ILIKE %s
+               OR r.from_city ILIKE %s
+               OR r.to_city ILIKE %s
+               OR r.description ILIKE %s
+        ''',
+        (pattern, pattern, pattern, pattern)
+    )).fetchall()
+    routes = [Route.from_row(route) for route in resp]
+
+    # Collapse trip/direction variants that share the same line, agency and endpoints.
+    routes = list({
+        (route.short_name, route.agency.id, route.from_city, route.to_city): route
+        for route in routes
+    }.values())
+
+    routes.sort(key=lambda r: _route_sort_key(r, query))
+    return routes[:limit]
+
+
 async def get_available_routes_for_stop(stop_code: int, conn: AsyncConnection) -> list[Route]:
     query = '''
         SELECT DISTINCT r.*, a.*
