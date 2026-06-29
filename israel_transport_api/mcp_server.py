@@ -20,12 +20,14 @@ from israel_transport_api.siri.siri_models import VehicleLocation
 
 logger = logging.getLogger('mcp_server')
 
-# stateless_http + a root streamable path so that mounting at "/mcp" exposes the
-# endpoint exactly at "/mcp" (rather than "/mcp/mcp").
+# The streamable endpoint lives at "/mcp"; the app is mounted at the root (see
+# main.py). Mounting the sub-app at "/mcp" instead would leave its route at "/",
+# which makes Starlette 307-redirect "/mcp" -> "/mcp/" — and behind a path-stripping
+# reverse proxy that redirect drops the prefix and the client never connects.
 mcp = FastMCP(
     'Israel public transport',
     stateless_http=True,
-    streamable_http_path='/',
+    streamable_http_path='/mcp',
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=bool(env.MCP_ALLOWED_HOSTS),
         allowed_hosts=env.MCP_ALLOWED_HOSTS,
