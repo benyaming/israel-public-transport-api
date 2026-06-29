@@ -46,8 +46,10 @@ app.include_router(stops_router)
 app.include_router(routes_router)
 app.include_router(siri_router)
 
-# Expose the same operations over the Model Context Protocol at /mcp.
-app.mount('/mcp', mcp_server.mcp.streamable_http_app())
+# Expose the same operations over the Model Context Protocol. The MCP app is mounted
+# at the root and serves its endpoint at /mcp (see mcp_server for why this avoids a
+# trailing-slash redirect); FastAPI's own routes and docs are matched first.
+app.mount('/', mcp_server.mcp.streamable_http_app())
 
 if __name__ == '__main__':
     if sys.platform == "win32":
