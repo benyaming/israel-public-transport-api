@@ -48,6 +48,14 @@ def _get_conn() -> AsyncConnection:
     return _conn
 
 
+# Upper bound on result size for caller-controlled (LLM) `limit` arguments.
+_MAX_LIMIT = 100
+
+
+def _clamp_limit(limit: int) -> int:
+    return max(1, min(limit, _MAX_LIMIT))
+
+
 @mcp.tool()
 async def find_stop_by_code(stop_code: int) -> Stop:
     """Find a public transport stop by its public stop code (e.g. 5200)."""
@@ -64,8 +72,8 @@ async def find_stop_by_id(stop_id: int) -> Stop:
 async def search_stops_by_name(query: str, limit: int = 20) -> list[Stop]:
     """Search for stops by (partial) name, e.g. "בנייני האומה" or "Savidor".
     Use this to turn a place the user named into concrete stops before fetching
-    arrivals or routes. Returns up to `limit` matches, prefix matches first."""
-    return await stops_repository.search_stops_by_name(query, _get_conn(), limit)
+    arrivals or routes. Returns up to `limit` matches (capped at 100), prefix matches first."""
+    return await stops_repository.search_stops_by_name(query, _get_conn(), _clamp_limit(limit))
 
 
 @mcp.tool()
@@ -90,9 +98,9 @@ async def find_route_by_id(route_id: int) -> Route:
 @mcp.tool()
 async def search_routes(query: str, limit: int = 20) -> list[Route]:
     """Search for routes/lines by line number (short name) or origin/destination city,
-    e.g. "480" or "חיפה". Returns up to `limit` de-duplicated matches, exact line-number
-    matches first."""
-    return await routes_repository.search_routes(query, _get_conn(), limit)
+    e.g. "480" or "חיפה". Returns up to `limit` de-duplicated matches (capped at 100),
+    exact line-number matches first."""
+    return await routes_repository.search_routes(query, _get_conn(), _clamp_limit(limit))
 
 
 @mcp.tool()

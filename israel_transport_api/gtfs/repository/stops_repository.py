@@ -48,6 +48,9 @@ async def find_stops_in_area(lat: float, lng: float, distance: int, conn: AsyncC
 
 
 async def search_stops_by_name(query: str, conn: AsyncConnection, limit: int = 20) -> list[Stop]:
+    query = query.strip()
+    if not query:
+        return []
     pattern = f'%{query}%'
     prefix = f'{query}%'
     stops = await (await conn.cursor().execute(
