@@ -9,6 +9,6 @@ ENV TZ=Asia/Jerusalem
 ENV PYTHONPATH=/home/app
 ENV DOCKER_MODE=true
 # Enable MCP Host-header (DNS-rebinding) validation for the deployed host.
-ENV MCP_ALLOWED_HOSTS='["zmanim.ginzburg.io", "localhost:*"]'
+ENV MCP_ALLOWED_HOSTS='["api.ginzburg.io", "localhost:*"]'
 EXPOSE 8000
 CMD ["uv", "run", "python", "main.py"]
