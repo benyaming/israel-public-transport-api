@@ -28,13 +28,13 @@ nothing extra needs to be started — running the API serves the MCP endpoint to
 ### Connecting a client
 
 This is a **streamable-HTTP** server, so point clients at the `/mcp` URL —
-`http://api.ginzburg.io/il_transport/mcp` for the hosted instance (or `http://localhost:8000/mcp`
+`https://api.ginzburg.io/il_transport/mcp` for the hosted instance (or `http://localhost:8000/mcp`
 when running locally). Below are configs for the most popular MCP clients.
 
 #### Claude Code
 
 ```sh
-claude mcp add --transport http israel-transport http://api.ginzburg.io/il_transport/mcp
+claude mcp add --transport http israel-transport https://api.ginzburg.io/il_transport/mcp
 ```
 
 #### Claude Desktop
@@ -50,7 +50,7 @@ For older versions whose `claude_desktop_config.json` only speaks stdio, bridge 
   "mcpServers": {
     "israel-transport": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "http://api.ginzburg.io/il_transport/mcp"]
+      "args": ["-y", "mcp-remote", "https://api.ginzburg.io/il_transport/mcp"]
     }
   }
 }
@@ -73,7 +73,7 @@ In `~/.codex/config.toml` (HTTP transport requires the rmcp client feature):
 experimental_use_rmcp_client = true
 
 [mcp_servers.israel-transport]
-url = "http://api.ginzburg.io/il_transport/mcp"
+url = "https://api.ginzburg.io/il_transport/mcp"
 ```
 
 #### VS Code (GitHub Copilot agent mode)
@@ -85,7 +85,7 @@ In `.vscode/mcp.json`:
   "servers": {
     "israel-transport": {
       "type": "http",
-      "url": "http://api.ginzburg.io/il_transport/mcp"
+      "url": "https://api.ginzburg.io/il_transport/mcp"
     }
   }
 }
@@ -98,7 +98,7 @@ In `.vscode/mcp.json`:
   "mcpServers": {
     "israel-transport": {
       "type": "http",
-      "url": "http://api.ginzburg.io/il_transport/mcp"
+      "url": "https://api.ginzburg.io/il_transport/mcp"
     }
   }
 }
