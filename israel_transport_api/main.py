@@ -47,7 +47,8 @@ app.include_router(routes_router)
 app.include_router(siri_router)
 
 # Keep reverse proxies (nginx) from buffering the MCP SSE responses, which otherwise
-# stalls the client's handshake. Must wrap the mount, so add it before mounting.
+# stalls the client's handshake. add_middleware wraps the whole app, mounts included,
+# regardless of call order.
 app.add_middleware(mcp_server.DisableProxyBuffering)
 
 # Expose the same operations over the Model Context Protocol. The MCP app is mounted

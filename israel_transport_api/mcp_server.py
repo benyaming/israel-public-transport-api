@@ -58,7 +58,13 @@ class DisableProxyBuffering:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope['type'] != 'http' or not scope.get('path', '').startswith('/mcp'):
+        # Strip any root_path prefix so the check works whether or not the reverse
+        # proxy strips the deployment prefix (e.g. /il_transport) before the app.
+        path = scope.get('path', '')
+        root_path = scope.get('root_path', '')
+        if root_path and path.startswith(root_path):
+            path = path[len(root_path):]
+        if scope['type'] != 'http' or not path.startswith('/mcp'):
             return await self.app(scope, receive, send)
 
         async def send_wrapper(message):
