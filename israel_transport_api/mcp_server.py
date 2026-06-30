@@ -27,6 +27,11 @@ logger = logging.getLogger('mcp_server')
 mcp = FastMCP(
     'Israel public transport',
     stateless_http=True,
+    # Reply to POSTs with plain application/json instead of an SSE stream. This server
+    # has no server-initiated messages, and JSON responses survive reverse proxies
+    # (e.g. nginx) cleanly, whereas buffered text/event-stream responses can hang the
+    # client until it times out.
+    json_response=True,
     streamable_http_path='/mcp',
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=bool(env.MCP_ALLOWED_HOSTS),
