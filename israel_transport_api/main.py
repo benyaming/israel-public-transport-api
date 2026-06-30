@@ -46,6 +46,10 @@ app.include_router(stops_router)
 app.include_router(routes_router)
 app.include_router(siri_router)
 
+# Keep reverse proxies (nginx) from buffering the MCP SSE responses, which otherwise
+# stalls the client's handshake. Must wrap the mount, so add it before mounting.
+app.add_middleware(mcp_server.DisableProxyBuffering)
+
 # Expose the same operations over the Model Context Protocol. The MCP app is mounted
 # at the root and serves its endpoint at /mcp (see mcp_server for why this avoids a
 # trailing-slash redirect); FastAPI's own routes and docs are matched first.

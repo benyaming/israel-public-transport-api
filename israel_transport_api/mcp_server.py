@@ -44,6 +44,32 @@ mcp = FastMCP(
 _conn: AsyncConnection | None = None
 
 
+class DisableProxyBuffering:
+    """ASGI middleware that adds ``X-Accel-Buffering: no`` to MCP responses.
+
+    The MCP client opens a long-lived GET SSE stream and waits for its response
+    headers before it will POST ``initialize``. A buffering reverse proxy (nginx's
+    default) holds those headers back, so the client never proceeds and times out.
+    This header tells nginx not to buffer the response even when ``proxy_buffering``
+    is on, so the fix doesn't depend on the proxy being configured correctly.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope['type'] != 'http' or not scope.get('path', '').startswith('/mcp'):
+            return await self.app(scope, receive, send)
+
+        async def send_wrapper(message):
+            if message['type'] == 'http.response.start':
+                headers = message.setdefault('headers', [])
+                headers.append((b'x-accel-buffering', b'no'))
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+
+
 def set_connection(conn: AsyncConnection) -> None:
     global _conn
     _conn = conn
